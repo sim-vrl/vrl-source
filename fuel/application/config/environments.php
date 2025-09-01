@@ -1,0 +1,19 @@
+<?php
+/*
+|--------------------------------------------------------------------------
+| Environments
+|--------------------------------------------------------------------------
+|
+| This configuration file will automatically set the ENVIRONMENT constant
+| based on the server address (e.g. $_SERVER['HTTP_HOST'])
+|
+|	$environments = array(
+|				'development' => array('localhost*', '192.:*'),
+|				'production' => array('mysite.com'),
+|				);
+*/
+
+$environments = array(
+  'development' => array('localhost*', '192.*', '*.dev', 'local.*'),
+  'production' => array('virtuaalihevoset.net', 'www.virtuaalihevoset.net', '13.*')
+);

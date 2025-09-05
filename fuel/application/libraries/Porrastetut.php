@@ -26,7 +26,7 @@ class Porrastetut
         2=>"Vt2: HeC, KN Special, HeB / ERJ: 80cm, 90cm, MEJ: 60cm, 70cm / Helppo (vt2)",
         3=>"Vt3: Noviisi valjakko / MEJ: 80cm",
         4=>"Vt4: HeA / ERJ: 100cm / CIC1",
-        5=>"Vt5: VaB / ERJ: 110cm / MEJ: 90cm / CIC2",
+        5=>"Vt5: VaB / ERJ: 110cm / MEJ: 90cm / CIC2 / Helppo valjakko",
         6=>"Vt6: VaA / ERJ: 120cm / MEJ: 100cm / CIC3",
         7=>"Vt7: PSG / ERJ: 130cm / MEJ: 110cm / CIC4 / Vaativa valjakko",
         8=>"Vt8: Int I / ERJ: 140cm / MEJ: 120cm / CIC5",

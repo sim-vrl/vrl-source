@@ -6,6 +6,8 @@
  *
  * This is the directory path to the fuel installation folder
  *
+ *
+ *
  */
 define('INSTALL_ROOT', str_replace('\\', '/', realpath(dirname(__FILE__))).'/fuel/');
 

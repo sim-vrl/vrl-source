@@ -8,7 +8,7 @@ Oletuksena salausavaimeksi on asetettu $config['encryption_key'] = 'test_test_te
 Kopioi tiedosto fuel/application/config/config_skeleton.php samaan kansioon ja nimeä se pelkäksi config.php:ksi.
 Sitten voit halutessasi muokata sen vastaamaan omaa konfiguraatiotasi, mutta ÄLÄ COMMITOI TÄTÄ TIEDOSTOA, vaan laita se .gitignoreen vaikka tortoisegitin avulla!
 
-Kuvat, javascripta yms. sijoitetaan assets kansioon
+Kuvat, javascripta yms. sijoitetaan assets kansioon.
 
 Alkuunsa luo tietokanta, ja aja sinne database kansion .sql tiedostot seuraavassa järjestyksessä (älä aja muita tiedostoja):
 fuel_schema.sql

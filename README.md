@@ -1,4 +1,5 @@
 # vrlv3
+# TEST
 
 Oletuksena tietokannan nimi on vrlv3, serveri localhost ja user root ilman salasanaa.
 Kopioi tiedosto fuel/application/config/database_skeleton.php samaan kansioon ja nimeä se pelkäksi database.php:ksi.

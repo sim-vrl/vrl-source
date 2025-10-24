@@ -2,6 +2,8 @@
 
 <p>Jos sinulla on kysyttävää tai ehdotuksia rekisteröintiasioita koskien, ota yhteyttä <a href="<?php echo base_url('tuki')?>" title="Ota yhteyttä tukeen" target="_blank">tukeen</a>.</p>
 
+<p>Olemme lisänneet tekstiä tähän osaan, jotta voimme testata pull requestin tekoa.</p>
+
 
 <ol class="inner ohjeet">
 <li>Yleistä hevosrekisteristä

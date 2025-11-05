@@ -2,7 +2,7 @@
 
 <p>Virtuaalisen ratsastajainliiton johdossa on VRL:n työryhmän käsittävä ylläpito, jonka alaisuudessa toimii kourallinen osa-alueiden vastaavia. Kaikilla osa-alueiden vastaavilla on alaisuudessaan vaihteleva määrä työntekijöitä. Koko liittoa pyöritetään täysin vapaaehtoistoimin.</p>
 
-<p>Otathan aina ensisijaisesti yhteyttä tuen kautta <a href="<?php echo site_url();?>/tuki"><?php echo site_url();?>tuki</a>, josta eri osa-alueiden työntekijät pääsevät käsittelemään kysymyksesi. Tuessa on useita eri kategorioita, joista voit valita sopivimman. Useamman asian ollessa kyseessä tee niistä erilliset ilmoitukset. Mikäli asiasi ei koske varsinaisesti tukiasioita, ota yhteyttä vastuuhenkilöihin, joiden vastuualueet ja sähköpostiosoitteet löydät alta.</p>
+<p>Otathan aina ensisijaisesti yhteyttä <a href="https://forms.gle/DWk8RvbfFXkfMJkr9">tuen kautta</a>, josta eri osa-alueiden työntekijät pääsevät käsittelemään kysymyksesi. Tuessa on useita eri kategorioita, joista voit valita sopivimman. Useamman asian ollessa kyseessä tee niistä erilliset ilmoitukset. Mikäli asiasi koskee jaoksia tai muuhun kuin rekisteriin liittyviä ongelmia, olethan yhteydessä sähköpostitse: <a href="mailto:vrlvirallinen@gmail.com">vrlvirallinen@gmail.com</p>
 <div class="panel panel-default yllapito">
   <div class="panel-heading">
     <h3 class="panel-title">Ylläpito</h3>
@@ -31,8 +31,6 @@
 
 <p>Jaosvastaava valvoo, että kaikki jaokset toimivat ja noudattavat yhteisiä sääntöjä. Hän toimii yhteyshenkilönä jaosten ja VRL:n ylläpidon välillä, rekrytoi tarpeen tullen uusia apukäsiä jaosten tehtäviin, vie läpi sääntömuutokset ja vastaa jaosten ylläpitäjien kysymyksiin.</p>
 
-
-<p>Ota yhteyttä tunnus-, työvoima- ja jaosvastaaviin <a href="<?php echo site_url();?>tuki" title="Ota yhteyttä tuen kautta">tuen</a>  kautta. </p>
    <table width="100%">
     
     <tr>
@@ -46,7 +44,7 @@
    
    </table>
   </div>
-  <div class="panel-footer">Ota yhteyttä tunnus-, työvoima- ja jaosvastaaviin <a href="<?php echo site_url();?>tuki" title="Ota yhteyttä tuen kautta">tuen</a> kautta.</div>
+  <div class="panel-footer">Ota yhteyttä tunnusrekisteriin <a href="https://forms.gle/DWk8RvbfFXkfMJkr9" title="Ota yhteyttä tuen kautta">tuen</a> kautta tai työvoima- ja jaosvastaaviin <a href="mailto:vrlvirallinen@gmail.com">sähköpostitse</a>.</div>
 </div>
 
 
@@ -58,7 +56,6 @@
   <div class="panel-body">
 <p>Hevos-, talli- ja kasvattajanimirekistereissä työskentelee vapaaehtoisia, jotka huolehtivat rekisterien sujuvasta toiminnasta ja virheiden korjaamisesta sekä ylläpidon luomien sääntöjen noudattamisesta. </p>
 
-<p>Ota yhteyttä rekisterityöntekijöihin <a href="<?php echo site_url();?>tuki" title="Ota yhteyttä tuen kautta">tuen</a>  kautta. </p>
    <table width="100%">
     
     <tr>
@@ -72,7 +69,7 @@
    
    </table>
   </div>
-  <div class="panel-footer">Ota yhteyttä rekisterityöntekijöihin <a href="<?php echo site_url();?>tuki" title="Ota yhteyttä tuen kautta">tuen</a> kautta.</div>
+  <div class="panel-footer">Ota yhteyttä rekisterityöntekijöihin <a href="https://forms.gle/DWk8RvbfFXkfMJkr9" title="Ota yhteyttä tuen kautta">tuen</a> kautta.</div>
 </div>
 
 

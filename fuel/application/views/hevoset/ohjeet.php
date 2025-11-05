@@ -1,6 +1,6 @@
 <h1>Hevosen rekisteröintiohjeet</h1>
 
-<p>Jos sinulla on kysyttävää tai ehdotuksia rekisteröintiasioita koskien, ota yhteyttä <a href="<?php echo base_url('tuki')?>" title="Ota yhteyttä tukeen" target="_blank">tukeen</a>.</p>
+<p>Jos sinulla on kysyttävää tai ehdotuksia rekisteröintiasioita koskien, ota yhteyttä <a href="https://forms.gle/DWk8RvbfFXkfMJkr9" title="Ota yhteyttä tukeen" target="_blank">tukeen</a>.</p>
 
 
 <ol class="inner ohjeet">

@@ -1,6 +1,6 @@
 <h1>Tallin rekisteröintiohjeet</h1>
 
-<p>Jos sinulla on kysyttävää tai ehdotuksia rekisteröintiasioita koskien, ota yhteyttä <a href="<?php echo site_url('tuki') ?>" title="Ota yhteyttä tukeen">tukeen</a>.</p>
+<p>Jos sinulla on kysyttävää tai ehdotuksia rekisteröintiasioita koskien, ota yhteyttä <a href="https://forms.gle/DWk8RvbfFXkfMJkr9" title="Ota yhteyttä tukeen">tukeen</a>.</p>
 
 
 <ol class="inner">
@@ -33,7 +33,7 @@
 <h3><a name="lomake"></a>1.1. Lomakkeen täyttäminen ja käsittely</h3>
 	<p>Vain VRL-tunnuksen rekisteröineet jäsenet voivat rekisteröidä tallejaan virtuaalitallirekisteriin. 
 
-	<p>Voit poistaa oman tallisi rekisteristä koska tahansa, jos siellä ei ole järjestetty kilpailuja tai näyttelyitä, ole syntynyt kasvatteja tai asu hevosia. Muussa tapauksessa tallia ei voi poistaa. Jos kuitenkin huomaat virheen tallisi rekisteriprofiilissa, otathan yhteyttä <a href="<?php echo site_url('tuki') ?>" title="Ota yhteyttä tukeen">tukeen</a>.</p>
+	<p>Voit poistaa oman tallisi rekisteristä koska tahansa, jos siellä ei ole järjestetty kilpailuja tai näyttelyitä, ole syntynyt kasvatteja tai asu hevosia. Muussa tapauksessa tallia ei voi poistaa. Jos kuitenkin huomaat virheen tallisi rekisteriprofiilissa, otathan yhteyttä <a href="https://forms.gle/DWk8RvbfFXkfMJkr9" title="Ota yhteyttä tukeen">tukeen</a>.</p>
 
 
 
@@ -52,7 +52,7 @@
 <h3><a name="tarkistus"></a>1.4. Muista tarkistaa</h3>
 	<p>Onko tallin nimi ja www-osoite kirjoitettu oikein lomakkeeseen? </p>
 
-	<p>Onhan tallisi ensisijainen kategoria oikein? Tallin täytyy täyttää kategorian vaatimukset jo rekisteröintivaiheessa. Tarkastathan kategoriavaatimukset alla olevasta listasta (2. Kategoriat).</span></p>
+	<p>Onhan tallisi ensisijainen kategoria oikein? Tallin täytyy täyttää kategorian vaatimukset jo rekisteröintivaiheessa. Tarkastathan kategoriavaatimukset alla olevasta listasta (2. Kategoriat).</p>
 
 <h2>2. Kategoriat</h2>
 	

@@ -22,16 +22,16 @@ class Porrastetut
     private $aste = array(1=> "Seurataso", 2=>"Aluetaso", 3=> "Kansallinen taso");
     
     private $koulutustasot = array(
-        1=>"Vt1: HeD / ERJ: 40cm, 60cm / MEJ: 50cm tai alle / Aloittelija, Harraste, Tutustumisluokka",       
-        2=>"Vt2: HeC, KN Special, HeB / ERJ: 80cm, 90cm, MEJ: 60cm, 70cm / Helppo (vt2)",
-        3=>"Vt3: Noviisi valjakko / MEJ: 80cm",
-        4=>"Vt4: HeA / ERJ: 100cm / CIC1",
-        5=>"Vt5: VaB / ERJ: 110cm / MEJ: 90cm / CIC2 / Helppo valjakko",
-        6=>"Vt6: VaA / ERJ: 120cm / MEJ: 100cm / CIC3",
-        7=>"Vt7: PSG / ERJ: 130cm / MEJ: 110cm / CIC4 / Vaativa valjakko",
-        8=>"Vt8: Int I / ERJ: 140cm / MEJ: 120cm / CIC5",
-        9=>"Vt9: Int II / ERJ: 150cm / MEJ: 130cm / Vaikea valjakko",
-        10=>"Vt10: GP / ERJ: 160cm",
+        1=>"Vt1: ERJ: 40cm, 60cm / KRJ: HeD / KERJ: Mini / MEJ: 50cm ja alle",       
+        2=>"Vt2: <small><small>ERJ: 80cm, 90cm / KRJ: HeC, KN Special, HeB / KERJ: Aloittelija, Harraste, Tutustumis, Helppo / MEJ: 60cm, 70cm, 80cm</small></small>",
+        3=>"Vt3: VVJ: Noviisi",
+        4=>"Vt4: <small><small>ERJ: 100cm / KRJ: HeA / KERJ: CIC1 / WRJ: Halter Showmanship, Halter, Western Horsemanship, Western Trail / MEJ: 90cm</small></small>",
+        5=>"Vt5: <small>ERJ: 110cm / KRJ: VaB / KERJ: CIC2 / VVJ: Helppo / WRJ: Trail-in-Hand, Western Pleasure, Ranch Trail / MEJ: 100cm</small>",
+        6=>"Vt6: <small>ERJ: 120cm / KRJ: VaA / KERJ: CIC3 / WRJ: Western Riding, Keyhole Racing, Breakaway Roping / MEJ: 110cm</small>",
+        7=>"Vt7: <small>ERJ: 130cm / KRJ: PSG / KERJ: CIC4 / VVJ: Vaativa / WRJ: Versatile Horse, Reining, Pole Bending, Cutting / MEJ: 120cm</small>",
+        8=>"Vt8: <small><small>ERJ: 140cm / KRJ: Int I / KERJ: CIC5 / WRJ: Freestyle Reining, Barrel Racing, Reined Cow Horse / ARJ: kaikki luokat / MEJ: 130cm</small></small>",
+        9=>"Vt9: ERJ: 150cm / KRJ: Int II / VVJ: Vaikea",
+        10=>"Vt10: ERJ: 160cm / KRJ: GP",
         
         
         );

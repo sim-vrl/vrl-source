@@ -52,7 +52,7 @@
 <h3><a name="tarkistus"></a>1.4. Muista tarkistaa</h3>
 	<p>Onko tallin nimi ja www-osoite kirjoitettu oikein lomakkeeseen? </p>
 
-	<p>Onhan tallisi ensisijainen kategoria oikein? Tallin täytyy täyttää kategorian vaatimukset jo rekisteröintivaiheessa. Tarkastathan kategoriavaatimukset alla olevasta listasta (2. Kategoriat).</span></p>
+	<p>Onhan tallisi ensisijainen kategoria oikein? Tallin täytyy täyttää kategorian vaatimukset jo rekisteröintivaiheessa. Tarkastathan kategoriavaatimukset alla olevasta listasta (2. Kategoriat).</p>
 
 <h2>2. Kategoriat</h2>
 	

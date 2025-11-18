@@ -6,4 +6,4 @@
 - Osallistua kilpailuihin ja näyttelyihin, ja kantakirjata hevosia.</p>
 
 <p>Tunnukset ovat henkilökohtaisia<br>
-- Kukin henkilö on oikeutettu vain yhteen VRL-tunnukseen väärinkäytösten välttämiseksi! Jos olet unohtanut salasanasi tai tunnuksesi, älä rekisteröi uutta tunnusta, vaan palauta salasana tai ota yhteyttä <a href="https://forms.gle/DWk8RvbfFXkfMJkr9">tukeen</a>.</p>
+- Kukin henkilö on oikeutettu vain yhteen VRL-tunnukseen väärinkäytösten välttämiseksi! Jos olet unohtanut salasanasi tai tunnuksesi, älä rekisteröi uutta tunnusta, vaan palauta salasana tai ota yhteyttä ylläpitoon.</p>

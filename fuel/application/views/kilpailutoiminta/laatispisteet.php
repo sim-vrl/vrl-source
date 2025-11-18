@@ -51,6 +51,13 @@ Laatuarvostelupisteisiin vaikuttavaksi lajiksi lasketaan kaikki ne lajit, joissa
 
 </p>
 
+<p>
+
+ <b>HUOM!</b> Otathan huomioon, että luokkalistauksen mukaisella maksimi-vaikeustasolla 1 kilpailevan hevosen laatispisteet tulee laskea poikkeuksellisesti pistelaskurin vt 2-kohdan perusteella, jotta laskuri antaa hevoselle oikeat pisteet. Tämä johtuu siitä, että tasoilla 1 ja 2 kilpailevat hevoset voivat kilpailla myös omaa luokkaansa alemmalla tasolla, ja laskuri tavallaan rinnastaa nämä samaksi tasoksi.<br />
+ <b>Poikkeus koskee max-vt1 -tason luokkia: ERJ 80cm ja 90cm, KRJ: He C ja KN Special, KERJ: Aloittelija, Harraste ja Tutustumis, MEJ: 60cm ja 70cm.</b>
+ 
+</p>
+
 
 <h2>Tarkasta hevosen laatispisteet porrastetuissa</h2>
 

@@ -53,7 +53,10 @@ Laatuarvostelupisteisiin vaikuttavaksi lajiksi lasketaan kaikki ne lajit, joissa
 
 <p>
 
- <b>HUOM!</b> Otathan huomioon, että luokkalistauksen mukaisella maksimi-vaikeustasoilla 0 ja 1 kilpailevien hevosten laatispisteet tulee laskea poikkeuksellisesti yhtä ylemmän maksimitason mukaisesti, jotta laskuri antaa hevoselle oikeat pisteet. Tämä johtuu siitä, että tasoilla 1 ja 2 kilpailevat hevoset voivat kilpailla myös omaa luokkaansa alemmalla tasolla. Matalalla tasolla kisaavilla hevosilla valitse pistelaskurista siis hevosesi koulutustasoa vastaava kohta pisteitä laskiessasi, vaikka sen luokan vaikeustaso ei täsmäisikään luokkalistauksessa merkittyyn maksimitasoon. 
+ <b>HUOM!</b> Valitse pistelaskurista aina hevosesi <b>koulutustasoa vastaava</b> kohta.<br>
+ Esimerkki 1: Maksimitasolla 0 kilpaileva hevonen on koulutustasoltaan ERJ: 60cm, valitse laskurista kohta "Vt1".<br>
+ Esimerkki 2: Maksimitasolla 1 kilpaileva hevonen on koulutustasoltaan KERJ: Aloittelija, valitse laskurista kohta "Vt2".<br>
+ Esimerkki 3: Maksimitasolla 2 kilpaileva hevonen on koulutustasoltaan KRJ: Helppo B, valitse laskurista kohta "Vt2".
 </p>
 
 

@@ -75,7 +75,8 @@ Laatuarvostelupisteisiin vaikuttavaksi lajiksi lasketaan kaikki ne lajit, joissa
 
 
     <?php
-            print '<ul><li><b>Kisapisteet:</b> ';
+          print '<ul><li><b>Hevonen:</b> ' . $rekisterinumero . ', <b>valittu jaos</b>: ' . $arvosteltava_laji . "</li>";
+            print '<li><b>Kisapisteet:</b> ';
             print $kisapisteet;
            print "p, kaava: (" . $lajin_pisteet . "/" . $lajin_max . ")*" . $laatis_kisamax . "*" . $kerroin . " = ". round($kisapisteet) . "</li>";
            print '<li><b>Pisteet hevosen vanhemmille/jälkeläisille:</b> ';
@@ -119,4 +120,3 @@ function yhteiset_traitit($eka, $toka){
   
   return $same;
 }
-

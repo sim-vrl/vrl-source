@@ -1161,7 +1161,20 @@ class Jaos_model extends Base_module_model
         
         return false;
     }
-    
+
+ 
+ // Luodaan jaoskartta joka hakee jaoksen id:n perusteella sen jaoksen lyhenteen
+    public function get_jaos_abbreviations_map()
+    {
+        $this->db->select('id, lyhenne');
+        $query = $this->db->get('vrlv3_kisat_jaokset');
+
+        $result = array();
+        foreach ($query->result_array() as $row) {
+            $result[$row['id']] = $row['lyhenne'];
+        }
+        return $result;
+    }
 
 }
 

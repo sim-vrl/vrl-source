@@ -405,7 +405,15 @@ class Kilpailutoiminta extends CI_Controller
                         
                     }
 
-    
+    				// Haetaan id:tä vastaavat jaosten lyhenteet modelista
+                    $lyhenne_kartta = $this->Jaos_model->get_jaos_abbreviations_map();
+                    $jaos_numero = $input['jaos'];
+
+                    if (isset($lyhenne_kartta[$jaos_numero])) {
+                        $lyhenne = $lyhenne_kartta[$jaos_numero];
+                    } else {
+                        $lyhenne = 'Tuntematon';
+                    }
                 
                 
                     //laatiksen maksimipistet
@@ -444,6 +452,8 @@ class Kilpailutoiminta extends CI_Controller
                     $sukupisteet = ($lajin_pisteet/$lajin_max)*$laatis_sukumax*$kerroin;
                     
                     $data['pisteet'] = true;
+                    $data['rekisterinumero'] = $input['vh'];
+                    $data['arvosteltava_laji'] = $lyhenne;
                     $data['kisapisteet'] = min($laatis_kisamax, round($kisapisteet));
                     $data['lajin_pisteet'] = $lajin_pisteet;
                     $data['lajin_max'] = $lajin_max;

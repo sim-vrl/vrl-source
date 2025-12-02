@@ -1649,7 +1649,7 @@ class Virtuaalihevoset extends CI_Controller
         
         $fields['ikaantyminen_d'] = array('label' => 'Ikääntyminen (päivissä)', 'type' => 'number', 'value' => $poni['ikaantyminen_d'] ?? 0,
                                           'class'=>'form-control', 'represents' => 'int|smallint|mediumint|bigint', 'negative' => FALSE, 'decimal' => FALSE,
-                                           'after_html' => '<span class="form_comment">Montako päivää hevosen yksi vuosi kestää. Mikäli tämä on asetettu, syntymäpäivät lasketaan tämän perusteella. </span>');    
+                                           'after_html' => '<span class="form_comment">Montako päivää hevosen yksi vuosi kestää. Mikäli tämä on asetettu, syntymäpäivät lasketaan tämän perusteella. Jos haluat nollata ikääntymisen, merkkaa 00 eli kaksi nollaa. </span>');    
 
     }
     

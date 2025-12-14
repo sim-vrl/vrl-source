@@ -44,7 +44,7 @@
 
 
 <h3><a name="teksti"></a>1.3. Virtuaalitalli-merkintä</h3>
-	<p>Tallin kaikilta <u>pääsivuilta</u> tulee löytyä näkyvä kirjoitettu teksti "<strong>Tämä on virtuaalitalli</strong>" tai vastaava lause, jossa on sana "<strong>virtuaalitalli</strong>" tässä muodossaan. Merkintä otsikkokuvassa, jossain muussa kuvassa, titlessä (sivun otsikossa) tai muu muoto, kuten "virtuaalinen talli", ei kelpaa. Merkinnän tulee löytyä CTRL + F -selainhaulla.</p>
+	<p>Tallin <u>kaikilta pääsivuilta</u> tulee löytyä näkyvä kirjoitettu teksti "<strong>Tämä on virtuaalitalli</strong>" tai vastaava lause, jossa on sana "<strong>virtuaalitalli</strong>" tai "<strong>sim-game stable</strong>" tässä muodossaan. Merkintä otsikkokuvassa, jossain muussa kuvassa, titlessä (sivun otsikossa) tai muu muoto, kuten "virtuaalinen talli", ei kelpaa. Merkinnän tulee löytyä CTRL + F -selainhaulla.</p>
 
 	<p>Merkinnällä pyritään estämään virtuaalitallien sekoittaminen oikeisiin talleihin ja mahdollistamaan virtuaalitallien poistaminen hakukoneiden hakutuloksista käyttämällä hakusanaa "virtuaalitalli".</p>
 

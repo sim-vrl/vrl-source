@@ -1,6 +1,7 @@
 <h1>Hevosen rekisteröintiohjeet</h1>
 
 <p>Jos sinulla on kysyttävää tai ehdotuksia rekisteröintiasioita koskien, ota yhteyttä <a href="https://forms.gle/DWk8RvbfFXkfMJkr9" title="Ota yhteyttä tukeen" target="_blank">tukeen</a>.</p>
+ <p>Guide for registration <a href="https://docs.google.com/document/d/1pjSwCnQaPrNBsZNWkUvlCyWrT3ltcqU3B-U_JOT4a6w/edit?usp=sharing">in English and German</a> (thanks for translation VRL-06066).</p>
 
 
 <ol class="inner ohjeet">

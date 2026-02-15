@@ -2,83 +2,93 @@
 
 <?php
 
-echo "<h3>Porrastetut kilpailut</h3>";
+echo "<h3>Porrastetut kilpailut</h2>";
 tableHead();
     
-// Käydään läpi KAIKKI jaokset, ei vain hevosen kisoja
-foreach ($jaokset as $id => $jaos_info) {
-    // Hypätään yli jaokset, jotka eivät salli porrastettuja
-    if ($jaos_info['s_salli_porrastetut'] == 0) {
+foreach ($kisatiedot as $jaos=>$info){
+    if($jaokset[$jaos]['s_salli_porrastetut'] == 0){
         continue;
     }
     
-    // Katsotaan löytyykö tälle jaokselle tietoja hevosen kisoista, muuten nollataan
-    $stats = isset($kisatiedot[$id]) ? $kisatiedot[$id] : null;
-    $voitot = isset($stats['porr_voi']) ? $stats['porr_voi'] : 0;
-    $sijoitukset = isset($stats['porr_sij']) ? $stats['porr_sij'] : 0;
-    $osallistumiset = isset($stats['porr_os']) ? $stats['porr_os'] : 0;
 
     echo "<tr>";
-    echo "<td><b>" . $jaos_info['lyhenne'] . "</b></td>";
-    echo "<td>" . $voitot . "</td>";
-    echo "<td>" . $sijoitukset . "</td>";
-    echo "<td>" . $osallistumiset . "</td>";
-    echo "<td>" . sijpros($voitot, $sijoitukset, $osallistumiset) . "%</td>";
+    echo "<td><b>". $jaokset[$jaos]['lyhenne']. "</b></td>";
+    echo "<td>".$info['porr_voi']."</td>";
+    echo "<td>".$info['porr_sij']."</td>";
+    echo "<td>".$info['porr_os']."</td>";
+        echo "<td>".sijpros($info['porr_voi'], $info['porr_sij'], $info['porr_os']) ."%</td>";
+
     echo "</tr>";
+    
 }
 
 tableEnd();
 
 
 echo "<h3>Perinteiset kilpailut</h3>";
+    
+  
 tableHead();
     
-foreach ($jaokset as $id => $jaos_info) {
-    $stats = isset($kisatiedot[$id]) ? $kisatiedot[$id] : null;
-    $voitot = isset($stats['voi']) ? $stats['voi'] : 0;
-    $sijoitukset = isset($stats['sij']) ? $stats['sij'] : 0;
-    $osallistumiset = isset($stats['os']) ? $stats['os'] : 0;
-
+foreach ($kisatiedot as $jaos=>$info){
     echo "<tr>";
-    echo "<td><b>" . $jaos_info['lyhenne'] . "</b></td>";
-    echo "<td>" . $voitot . "</td>";
-    echo "<td>" . $sijoitukset . "</td>";
-    echo "<td>" . $osallistumiset . "</td>";
-    echo "<td>" . sijpros($voitot, $sijoitukset, $osallistumiset) . "%</td>";
+    echo "<td><b>". $jaokset[$jaos]['lyhenne']. "</b></td>";
+    echo "<td>".$info['voi']."</td>";
+    echo "<td>".$info['sij']."</td>";
+    echo "<td>".$info['os']."</td>";
+        echo "<td>".sijpros($info['voi'], $info['sij'], $info['os']) ."%</td>";
+
     echo "</tr>";
+    
 }
 
 tableEnd();
-
-// Alkuperäiset funktiot säilyvät ennallaan...
-function sijPros($voi, $sij, $os){
-    $voi = intval(round($voi));
-    $sij = intval(round($sij));
-    $os = intval(round($os));
     
-    if ($os <= 0){
-        return 0;
+    
+    
+    
+    
+    
+    
+    
+    
+    function sijPros($voi, $sij, $os){
+        $voi = intval(round($voi));
+        $sij = intval(round($sij));
+        $os = intval(round($os));
+        
+        if ($os === 0){
+            return 0;
+        }
+        else {
+            $sijpros = ($voi + $sij)/$os;
+            $sijpros = $sijpros * 100;
+            $sijpros = round($sijpros);
+            return $sijpros;
+        }
     }
     
-    $sijpros = (($voi + $sij) / $os) * 100;
-    return round($sijpros);
-}
+    
+    function tableHead(){
+          echo '<table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Jaos</th>
+            <th scope="col">Voitot</th>
+            <th scope="col">Muut sijoitukset</th>
+            <th scope="col">Osallistumiset</th>        
+            <th scope="col">Sijoitusprosentti</th>
+          </tr>
+        </thead>';
+    echo "<tbody>";
+    }
 
-function tableHead(){
-    echo '<table class="table">
-    <thead>
-      <tr>
-        <th scope="col">Jaos</th>
-        <th scope="col">Voitot</th>
-        <th scope="col">Muut sijoitukset</th>
-        <th scope="col">Osallistumiset</th>        
-        <th scope="col">Sijoitusprosentti</th>
-      </tr>
-    </thead>
-    <tbody>';
-}
-
-function tableEnd(){
-    echo "</tbody></table>";
-}
-?>
+    
+    function tableEnd(){
+        echo "</tbody>";
+    echo "</table>";
+    
+    }
+    
+    
+    ?>

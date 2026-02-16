@@ -342,58 +342,61 @@ class Kisajarjestelma
         }
                         
                 
-        $stats_info = $this->_get_horses_stats_info($vh_list, $jaos);
+  $stats_info = $this->_get_horses_stats_info($vh_list, $jaos);
      
-                
         $bulk_add = array();
         $bulk_edit = array();
         $pre_txt = "";
         if($porr){ $pre_txt = "porr_";}
         
-        foreach ($stats_info as $horse=>$data){
+        // --- KORJATTU OSA ALKAA ---
+        
+        // 1. Luodaan lista uniikeista VH-numeroista, jotka tässä kisassa esiintyivät
+        $unique_vhs = array_unique($vh_list);
+
+        // 2. Käydään läpi JOKAINEN kisannut hevonen (eikä vain niitä, jotka löytyivät tietokannasta)
+        foreach ($unique_vhs as $horse) {
+            // Haetaan olemassa oleva data jos se löytyi _get_horses_stats_info -haulla
+            $data = isset($stats_info[$horse]) ? $stats_info[$horse] : null;
+            
             $new_data = array();
             $new_data['reknro'] = $horse;
-              
-            //jos hevosella ei ole tuloksia aiemmalti
-            if(!isset($data['jaos'])){       
+            
+            // TARKISTUS: Onko hevosella jo rivi tässä jaoksessa?
+            if(is_null($data) || !isset($data['jaos'])) {       
                 $new_data['jaos'] = $jaos;
                 $new_data[$pre_txt.'voi'] = 0;
                 $new_data[$pre_txt.'sij'] = 0;
                 $new_data[$pre_txt.'os'] = 0;
 
+                if(isset($voi[$horse])){ $new_data[$pre_txt.'voi'] = $voi[$horse]; }
+                if(isset($sij[$horse])){ $new_data[$pre_txt.'sij'] = $sij[$horse]; }
+                if(isset($os[$horse])){  $new_data[$pre_txt.'os'] = $os[$horse]; }
                 
-                if(isset($voi[$horse])){
-                    $new_data[$pre_txt.'voi'] = $voi[$horse];
-                }
-                if(isset($sij[$horse])){
-                    $new_data[$pre_txt.'sij'] = $sij[$horse];
-                }
-                if(isset($os[$horse])){
-                    $new_data[$pre_txt.'os'] = $os[$horse];
-                }
-                //jos statistiikkatietoja oli, lisätään
                 $bulk_add[] = $new_data;
-            } //jos hevosella on aiempia *tulok*sia
+            } 
             else {
-                 if(isset($voi[$horse])){
-                    $new_data[$pre_txt.'voi'] = $data[$pre_txt.'voi'] + $voi[$horse];
+                $stats_ok = false;
+                if(isset($voi[$horse])){
+                    $new_data[$pre_txt.'voi'] = (int)$data[$pre_txt.'voi'] + $voi[$horse];
                     $stats_ok = true;
                 }
                 if(isset($sij[$horse])){
-                    $new_data[$pre_txt.'sij'] = $data[$pre_txt.'sij'] + $sij[$horse];
+                    $new_data[$pre_txt.'sij'] = (int)$data[$pre_txt.'sij'] + $sij[$horse];
                     $stats_ok = true;
                 }
                 if(isset($os[$horse])){
-                    $new_data[$pre_txt.'os'] = $data[$pre_txt.'os'] + $os[$horse];
+                    $new_data[$pre_txt.'os'] = (int)$data[$pre_txt.'os'] + $os[$horse];
                     $stats_ok = true;
                 }
-                //jos statistiikkatietoja oli, lisätään
+                
                 if($stats_ok){
                     $bulk_edit[] = $new_data;
                 }
             }
-            
         }
+        
+        // --- KORJATTU OSA PÄÄTTYY ---
 
         foreach($bulk_edit as $edit){
             $this->CI->db->where('jaos', $jaos);
@@ -426,10 +429,12 @@ class Kisajarjestelma
         if(sizeof($vhs) > 0){
             $this->CI->db->select('nimi, k.*, h.reknro');
             $this->CI->db->from('vrlv3_hevosrekisteri as h');
-            $this->CI->db->join('vrlv3_hevosrekisteri_kisatiedot as k', 'h.reknro = k.reknro', 'LEFT');
-    
-            $this->CI->db->where_in('h.reknro', $vhs);
-            $this->CI->db->where_in('k.jaos', $jaos);
+
+
+		// Siirretään jaos-ehto suoraan JOIN-lauseeseen
+$this->CI->db->join('vrlv3_hevosrekisteri_kisatiedot as k', 'h.reknro = k.reknro AND k.jaos = ' . $this->CI->db->escape($jaos), 'LEFT');
+$this->CI->db->where_in('h.reknro', $vhs);
+// Poista tai kommentoi pois vanha where_in k.jaos
 
             
             $query = $this->CI->db->get();

@@ -350,49 +350,27 @@ class Kisajarjestelma
         $pre_txt = "";
         if($porr){ $pre_txt = "porr_";}
         
-        foreach ($stats_info as $horse=>$data){
-            $new_data = array();
-            $new_data['reknro'] = $horse;
-              
-            //jos hevosella ei ole tuloksia aiemmalti
-            if(!isset($data['jaos'])){       
-                $new_data['jaos'] = $jaos;
-                $new_data[$pre_txt.'voi'] = 0;
-                $new_data[$pre_txt.'sij'] = 0;
-                $new_data[$pre_txt.'os'] = 0;
-
-                
-                if(isset($voi[$horse])){
-                    $new_data[$pre_txt.'voi'] = $voi[$horse];
-                }
-                if(isset($sij[$horse])){
-                    $new_data[$pre_txt.'sij'] = $sij[$horse];
-                }
-                if(isset($os[$horse])){
-                    $new_data[$pre_txt.'os'] = $os[$horse];
-                }
-                //jos statistiikkatietoja oli, lisätään
-                $bulk_add[] = $new_data;
-            } //jos hevosella on aiempia *tulok*sia
-            else {
-                 if(isset($voi[$horse])){
-                    $new_data[$pre_txt.'voi'] = $data[$pre_txt.'voi'] + $voi[$horse];
-                    $stats_ok = true;
-                }
-                if(isset($sij[$horse])){
-                    $new_data[$pre_txt.'sij'] = $data[$pre_txt.'sij'] + $sij[$horse];
-                    $stats_ok = true;
-                }
-                if(isset($os[$horse])){
-                    $new_data[$pre_txt.'os'] = $data[$pre_txt.'os'] + $os[$horse];
-                    $stats_ok = true;
-                }
-                //jos statistiikkatietoja oli, lisätään
-                if($stats_ok){
-                    $bulk_edit[] = $new_data;
-                }
-            }
+$unique_vhs = array_unique($vh_list);
+        foreach ($unique_vhs as $horse){
+            $data = isset($stats_info[$horse]) ? $stats_info[$horse] : null;
+            $new_data = array('reknro' => $horse);
             
+            if(is_null($data) || !isset($data['jaos']) || is_null($data['jaos'])){       
+                $new_data['jaos'] = $jaos;
+                $new_data[$pre_txt.'voi'] = isset($voi[$horse]) ? $voi[$horse] : 0;
+                $new_data[$pre_txt.'sij'] = isset($sij[$horse]) ? $sij[$horse] : 0;
+                $new_data[$pre_txt.'os'] = isset($os[$horse]) ? $os[$horse] : 0;
+                $bulk_add[] = $new_data;
+            } else {
+                $stats_ok = false;
+                foreach(['voi', 'sij', 'os'] as $key){
+                    if(isset(${$key}[$horse])){
+                        $new_data[$pre_txt.$key] = (int)$data[$pre_txt.$key] + ${$key}[$horse];
+                        $stats_ok = true;
+                    }
+                }
+                if($stats_ok){ $bulk_edit[] = $new_data; }
+            }
         }
 
         foreach($bulk_edit as $edit){
@@ -420,30 +398,22 @@ class Kisajarjestelma
         }
     }
     
-    private function _get_horses_stats_info($vhs, $jaos){
+private function _get_horses_stats_info($vhs, $jaos){
         $stats_data = array();
-        
-        if(sizeof($vhs) > 0){
-            $this->CI->db->select('nimi, k.*, h.reknro');
+        if(count($vhs) > 0){
+            $this->CI->db->select('h.reknro, k.*');
             $this->CI->db->from('vrlv3_hevosrekisteri as h');
-            $this->CI->db->join('vrlv3_hevosrekisteri_kisatiedot as k', 'h.reknro = k.reknro', 'LEFT');
-    
+            $this->CI->db->join('vrlv3_hevosrekisteri_kisatiedot as k', 
+                'h.reknro = k.reknro AND k.jaos = ' . $this->CI->db->escape($jaos), 'left');
             $this->CI->db->where_in('h.reknro', $vhs);
-            $this->CI->db->where_in('k.jaos', $jaos);
-
-            
             $query = $this->CI->db->get();
-            
-            if ($query->num_rows() > 0)
-            {
+            if ($query->num_rows() > 0){
                 foreach ($query->result_array() as $row){
                     $stats_data[$row['reknro']] = $row;
                 }
             }
         }
-        
         return $stats_data;
-
     }
     
     ///////////////////////////////////////////////////////////////////////////////

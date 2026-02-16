@@ -1153,15 +1153,16 @@ class Hevonen_model extends Base_module_model
     }
     
        //porrastetut
-   public function get_horse_sport_info_by_jaos($reknro)
+ public function get_horse_sport_info_by_jaos($reknro)
 {
     $muunnettu_reknro = $this->CI->vrl_helper->vh_to_number($reknro);
     
-    // DEBUG-ALKU
     echo "<script>
-        console.group('VRL DEBUG: Hevosen tilastohaku');
-        console.log('Alkuperäinen tunnus: " . $reknro . "');
-        console.log('vh_to_number tulos: " . $muunnettu_reknro . "');
+        console.group('VRL DATABASE CHECK');
+        console.log('1. Tietokanta käytössä: " . $this->db->database . "');
+        console.log('2. Taulun etuliite (prefix): " . $this->db->dbprefix . "');
+        console.log('3. Lopullinen haettava taulu: " . $this->db->dbprefix . "vrlv3_hevosrekisteri_kisatiedot');
+        console.groupEnd();
     </script>";
     // DEBUG-LOPPU
 

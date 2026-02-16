@@ -2097,29 +2097,58 @@ class Virtuaalihevoset extends CI_Controller
     }
 
 public function korjaa_statsit() {
-    // 1. Otetaan yhteys suoraan MySQL-pohjaisesti ohi CodeIgniterin hitauden
-    $db_handle = $this->db->conn_id;
+    // Nostetaan rajoja, koska tekstin analysointi vie aikaa
+    ini_set('memory_limit', '512M');
+    set_time_limit(0);
 
-    echo "<h2>Kevyt-päivitys</h2>";
+    // Hevoset, jotka haluat korjata
+    $etsityt_hevoset = array('VH18-026-0145', 'VH25-044-0150', 'VH25-043-0018');
+    
+    echo "<h2>Aloitetaan tekstianalyysi...</h2>";
 
-    // Kokeillaan päivittää sijoitukset yhdelle hevoselle kerrallaan 
-    // suoralla SQL-komennolla, joka on yleensä nopeampi.
-    $reknrot = array(180260145, 180250004, 18260145, 18250004);
+    foreach($etsityt_hevoset as $vh_nro) {
+        // Puhdistetaan numero pelkäksi numeroksi (esim. 180260145) hakuun, jos tarpeen
+        $puhdas_nro = str_replace(array('VH', '-'), '', $vh_nro);
+        $stats = array(); // [jaos_id => [voi, sij, os]]
 
-    foreach($reknrot as $nro) {
-        echo "Päivitetään $nro... ";
-        
-        // Tämä komento vain YRITTÄÄ päivittää. Jos se kestää yli 5 sekuntia, se katkaistaan.
-        $sql = "UPDATE vrlv3_hevosrekisteri_kisatiedot 
-                SET os = (SELECT COUNT(*) FROM vrlv3_kilpailut_tulokset WHERE reknro = $nro) 
-                WHERE reknro = $nro";
-        
-        if($this->db->simple_query($sql)) {
-            echo "OK!<br>";
-        } else {
-            echo "Virhe tai aikakatkaisu.<br>";
+        // Haetaan kaikki tulokset, joissa tämä VH-numero esiintyy
+        $q = $this->db->query("SELECT t.tulokset, k.jaos FROM vrlv3_kisat_tulokset t 
+                               JOIN vrlv3_kisat_kisakalenteri k ON t.kisa_id = k.kisa_id 
+                               WHERE t.tulokset LIKE '%$vh_nro%'");
+
+        foreach($q->result_array() as $row) {
+            $jaos = $row['jaos'];
+            if(!isset($stats[$jaos])) { $stats[$jaos] = array('v'=>0, 's'=>0, 'o'=>0); }
+
+            // Pilkotaan teksti riveihin
+            $rivit = explode("\n", str_replace("\r", "", $row['tulokset']));
+            
+            foreach($rivit as $rivi) {
+                if(strpos($rivi, $vh_nro) !== false) {
+                    $stats[$jaos]['o']++; // Osallistuminen löytyi
+                    
+                    // Etsitään sija rivin alusta (esim "1. mibula...")
+                    if(preg_match('/^(\d+)\./', trim($rivi), $match)) {
+                        $sija = intval($match[1]);
+                        if($sija == 1) { $stats[$jaos]['v']++; }
+                        if($sija > 1 && $sija <= 10) { $stats[$jaos]['s']++; }
+                    }
+                }
+            }
         }
+
+        // Tallennetaan tulokset kantaan
+        foreach($stats as $jaos_id => $s) {
+            $sql = "INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
+                    VALUES ($puhdas_nro, $jaos_id, {$s['v']}, {$s['s']}, {$s['o']}) 
+                    ON DUPLICATE KEY UPDATE voi={$s['v']}, sij={$s['s']}, os={$s['o']}";
+            $this->db->query($sql);
+        }
+        
+        echo "Hevonen $vh_nro päivitetty! (Löytyi ".array_sum(array_column($stats, 'o'))." starttia)<br>";
+        flush();
     }
+    echo "<h3>Kaikki valmista!</h3>";
 }
 	
 }

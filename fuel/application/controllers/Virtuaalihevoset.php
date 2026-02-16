@@ -2097,54 +2097,35 @@ class Virtuaalihevoset extends CI_Controller
     }
 
 	public function korjaa_statsit() {
-        // Estetään aikakatkaisu, jos kanta on hidas
-        set_time_limit(300);
-        
-        echo "<h2>Käynnistetään tilastojen korjaus...</h2>";
-        ob_start();
-
-        // Kokeillaan aluksi vain näillä neljällä, jotka tiedetään varmasti
-        $hevoset = array(180260145, 250430018, 250440150, 260220006);
-
-        foreach($hevoset as $reknro) {
-            echo "Käsitellään hevonen: " . $reknro . "... ";
-            
-            // Haetaan jaokset arkistosta käyttäen suoraa querya
-            $q = $this->db->query("SELECT DISTINCT jaos FROM vrlv3_kilpailut_tulokset WHERE reknro = " . intval($reknro));
-            $tulokset = $q->result_array();
-            
-            if (count($tulokset) > 0) {
-                echo "<strong>Löytyi " . count($tulokset) . " jaosta!</strong><br>";
-                foreach($tulokset as $j) {
-                    $js = $j['jaos'];
-                    
-                    // Lasketaan voitot, sijoitukset ja osallistumiset
-                    $v_q = $this->db->query("SELECT COUNT(*) as maara FROM vrlv3_kilpailut_tulokset WHERE reknro = $reknro AND jaos = $js AND sija = 1")->row();
-                    $s_q = $this->db->query("SELECT COUNT(*) as maara FROM vrlv3_kilpailut_tulokset WHERE reknro = $reknro AND jaos = $js AND sija > 1 AND sija <= 10")->row();
-                    $o_q = $this->db->query("SELECT COUNT(*) as maara FROM vrlv3_kilpailut_tulokset WHERE reknro = $reknro AND jaos = $js")->row();
-                    
-                    $voi = $v_q->maara;
-                    $sij = $s_q->maara;
-                    $os = $o_q->maara;
-
-                    // Päivitetään tai lisätään tiedot
-                    $sql = "INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
-                            VALUES ($reknro, $js, $voi, $sij, $os) 
-                            ON DUPLICATE KEY UPDATE voi = $voi, sij = $sij, os = $os";
-                    $this->db->query($sql);
-                    
-                    echo "-- Jaos $js päivitetty (V: $voi, S: $sij, O: $os)<br>";
-                }
-            } else {
-                echo "Ei tuloksia arkistossa tässä muodossa.<br>";
-            }
-            // Pakotetaan teksti näkyviin selaimessa
-            echo str_repeat(' ', 1024 * 64);
-            ob_flush();
-            flush();
-        }
-        echo "<h3>Valmis!</h3>";
+    echo "<h2>Diagnostiikka käynnissä...</h2>";
+    
+    // Testataan vain yhdellä numerolla
+    $testi_nro = 180260145; 
+    
+    echo "Haetaan näyte arkistosta numerolla $testi_nro... <br>";
+    
+    // Haetaan vain 1 rivi, jotta nähdään onko yhteys edes auki
+    $query = $this->db->query("SELECT * FROM vrlv3_kilpailut_tulokset LIMIT 1");
+    if ($query->num_rows() > 0) {
+        $row = $query->row_array();
+        echo "Yhteys arkistoon toimii! Esimerkkirivi arkistosta:<br>";
+        echo "Reknro arkistossa on muodossa: <strong>" . $row['reknro'] . "</strong> (Tyyppi: " . gettype($row['reknro']) . ")<br>";
+    } else {
+        echo "Arkistotaulu näyttää olevan tyhjä tai siihen ei saada yhteyttä.<br>";
+        return;
     }
+
+    // Jos pääsimme tänne, yritetään hakea testihevosen tiedot
+    $q = $this->db->query("SELECT jaos, sija FROM vrlv3_kilpailut_tulokset WHERE reknro = " . $this->db->escape($testi_nro));
+    echo "Kysely suoritettu... Tuloksia: " . $q->num_rows() . "<br>";
+    
+    if($q->num_rows() == 0) {
+        echo "Ei löytynyt tällä numerolla. Kokeillaan ilman nollia...<br>";
+        $testi_nro_2 = 18260145;
+        $q2 = $this->db->query("SELECT jaos, sija FROM vrlv3_kilpailut_tulokset WHERE reknro = " . $this->db->escape($testi_nro_2));
+        echo "Tuloksia ilman nollia: " . $q2->num_rows() . "<br>";
+    }
+}
 	
 }
 ?>

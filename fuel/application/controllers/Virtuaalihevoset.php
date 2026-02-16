@@ -2097,53 +2097,42 @@ class Virtuaalihevoset extends CI_Controller
     }
 
 	public function korjaa_statsit() {
-        // Estetään aikakatkaisu, jos kanta on hidas
-        set_time_limit(300);
-        
-        echo "<h2>Käynnistetään tilastojen korjaus...</h2>";
-        ob_start();
+        // Luettelo korjattavista numeroista
+        // Kokeillaan molempia muotoja (nollalla ja ilman), jotta varmasti tärppää
+        $hevoset = array(
+            18260145, 18250004, 18250005, 18210329,
+            180260145, 180250004, 180250005, 180210329
+        );
 
-        // Kokeillaan aluksi vain näillä neljällä, jotka tiedetään varmasti
-        $hevoset = array(180260145, 250430018, 250440150, 260220006);
+        echo "<h2>Käynnistetään tilastojen korjaus...</h2>";
 
         foreach($hevoset as $reknro) {
-            echo "Käsitellään hevonen: " . $reknro . "... ";
+            // Etsitään kaikki jaokset, joissa hevosella on tuloksia arkistossa
+            $jaokset_query = $this->db->query("SELECT DISTINCT jaos FROM vrlv3_kilpailut_tulokset WHERE reknro = " . $this->db->escape($reknro));
             
-            // Haetaan jaokset arkistosta käyttäen suoraa querya
-            $q = $this->db->query("SELECT DISTINCT jaos FROM vrlv3_kilpailut_tulokset WHERE reknro = " . intval($reknro));
-            $tulokset = $q->result_array();
-            
-            if (count($tulokset) > 0) {
-                echo "<strong>Löytyi " . count($tulokset) . " jaosta!</strong><br>";
-                foreach($tulokset as $j) {
+            if ($jaokset_query->num_rows() > 0) {
+                echo "<strong>Hevonen $reknro löytyi arkistosta:</strong><br>";
+                
+                foreach($jaokset_query->result_array() as $j) {
                     $js = $j['jaos'];
                     
-                    // Lasketaan voitot, sijoitukset ja osallistumiset
-                    $v_q = $this->db->query("SELECT COUNT(*) as maara FROM vrlv3_kilpailut_tulokset WHERE reknro = $reknro AND jaos = $js AND sija = 1")->row();
-                    $s_q = $this->db->query("SELECT COUNT(*) as maara FROM vrlv3_kilpailut_tulokset WHERE reknro = $reknro AND jaos = $js AND sija > 1 AND sija <= 10")->row();
-                    $o_q = $this->db->query("SELECT COUNT(*) as maara FROM vrlv3_kilpailut_tulokset WHERE reknro = $reknro AND jaos = $js")->row();
+                    // Lasketaan lukemat
+                    $voi = $this->db->where(['reknro' => $reknro, 'jaos' => $js, 'sija' => 1])->count_all_results('vrlv3_kilpailut_tulokset');
+                    $sij = $this->db->where(['reknro' => $reknro, 'jaos' => $js, 'sija >' => 1, 'sija <=' => 10])->count_all_results('vrlv3_kilpailut_tulokset');
+                    $os  = $this->db->where(['reknro' => $reknro, 'jaos' => $js])->count_all_results('vrlv3_kilpailut_tulokset');
                     
-                    $voi = $v_q->maara;
-                    $sij = $s_q->maara;
-                    $os = $o_q->maara;
-
-                    // Päivitetään tai lisätään tiedot
-                    $sql = "INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
-                            VALUES ($reknro, $js, $voi, $sij, $os) 
-                            ON DUPLICATE KEY UPDATE voi = $voi, sij = $sij, os = $os";
-                    $this->db->query($sql);
+                    // Pakotetaan tiedot kooste-tauluun
+                    $this->db->query("INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
+                                      VALUES (" . $this->db->escape($reknro) . ", " . $this->db->escape($js) . ", $voi, $sij, $os) 
+                                      ON DUPLICATE KEY UPDATE voi=$voi, sij=$sij, os=$os");
                     
-                    echo "-- Jaos $js päivitetty (V: $voi, S: $sij, O: $os)<br>";
+                    echo "- Jaos $js päivitetty: $voi voittoa, $sij sijoitusta, $os starttia.<br>";
                 }
             } else {
-                echo "Ei tuloksia arkistossa tässä muodossa.<br>";
+                echo "Hevonen $reknro: Ei löytynyt arkistoituja tuloksia.<br>";
             }
-            // Pakotetaan teksti näkyviin selaimessa
-            echo str_repeat(' ', 1024 * 64);
-            ob_flush();
-            flush();
         }
-        echo "<h3>Valmis!</h3>";
+        echo "<br><strong>Valmis! Tarkista nyt hevosten profiilit.</strong>";
     }
 	
 }

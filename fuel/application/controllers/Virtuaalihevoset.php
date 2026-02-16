@@ -2095,7 +2095,45 @@ class Virtuaalihevoset extends CI_Controller
            
             
     }
-	
+
+	public function korjaa_statsit() {
+        // Luettelo korjattavista numeroista
+        // Kokeillaan molempia muotoja (nollalla ja ilman), jotta varmasti tärppää
+        $hevoset = array(
+            18260145, 18250004, 18250005, 18210329,
+            180260145, 180250004, 180250005, 180210329
+        );
+
+        echo "<h2>Käynnistetään tilastojen korjaus...</h2>";
+
+        foreach($hevoset as $reknro) {
+            // Etsitään kaikki jaokset, joissa hevosella on tuloksia arkistossa
+            $jaokset_query = $this->db->query("SELECT DISTINCT jaos FROM vrlv3_kilpailut_tulokset WHERE reknro = " . $this->db->escape($reknro));
+            
+            if ($jaokset_query->num_rows() > 0) {
+                echo "<strong>Hevonen $reknro löytyi arkistosta:</strong><br>";
+                
+                foreach($jaokset_query->result_array() as $j) {
+                    $js = $j['jaos'];
+                    
+                    // Lasketaan lukemat
+                    $voi = $this->db->where(['reknro' => $reknro, 'jaos' => $js, 'sija' => 1])->count_all_results('vrlv3_kilpailut_tulokset');
+                    $sij = $this->db->where(['reknro' => $reknro, 'jaos' => $js, 'sija >' => 1, 'sija <=' => 10])->count_all_results('vrlv3_kilpailut_tulokset');
+                    $os  = $this->db->where(['reknro' => $reknro, 'jaos' => $js])->count_all_results('vrlv3_kilpailut_tulokset');
+                    
+                    // Pakotetaan tiedot kooste-tauluun
+                    $this->db->query("INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
+                                      VALUES (" . $this->db->escape($reknro) . ", " . $this->db->escape($js) . ", $voi, $sij, $os) 
+                                      ON DUPLICATE KEY UPDATE voi=$voi, sij=$sij, os=$os");
+                    
+                    echo "- Jaos $js päivitetty: $voi voittoa, $sij sijoitusta, $os starttia.<br>";
+                }
+            } else {
+                echo "Hevonen $reknro: Ei löytynyt arkistoituja tuloksia.<br>";
+            }
+        }
+        echo "<br><strong>Valmis! Tarkista nyt hevosten profiilit.</strong>";
+    }
 	
 }
 ?>

@@ -2095,7 +2095,71 @@ class Virtuaalihevoset extends CI_Controller
            
             
     }
-	
+
+	public function suursiivous() {
+    // Estetään timeoutit ja muistirajat
+    ini_set('memory_limit', '1024M');
+    set_time_limit(0);
+
+    echo "Haetaan lista hevosista, joilla on osallistumisia...\n";
+
+    // Haetaan uniikit VH-numerot osallistujalistasta
+    $hevoset = $this->db->query("SELECT DISTINCT VH FROM vrlv3_kisat_kisaosallis WHERE VH > 0")->result_array();
+    $yhteensa = count($hevoset);
+    $i = 0;
+
+    echo "Löytyi $yhteensa hevosta. Aloitetaan analyysi...\n";
+
+    foreach($hevoset as $h) {
+        $nro = $h['VH'];
+        $i++;
+
+        // Muunnetaan hakuformaattiin VH18-026-0145
+        $vuosi = substr($nro, 0, 2);
+        $jaos = substr($nro, 2, 3);
+        $yksilo = substr($nro, 5, 4);
+        $vh_muoto = "VH" . $vuosi . "-" . $jaos . "-" . $yksilo;
+
+        $stats = array();
+
+        // Haetaan tulosmassat, joissa tämä hevonen esiintyy
+        $q = $this->db->query("SELECT t.tulokset, k.jaos FROM vrlv3_kisat_tulokset t 
+                               JOIN vrlv3_kisat_kisakalenteri k ON t.kisa_id = k.kisa_id 
+                               WHERE t.tulokset LIKE '%$vh_muoto%'");
+
+        foreach($q->result_array() as $row) {
+            $j_id = $row['jaos'];
+            if(!isset($stats[$j_id])) { $stats[$j_id] = array('v'=>0, 's'=>0, 'o'=>0); }
+
+            $rivit = explode("\n", $row['tulokset']);
+            foreach($rivit as $rivi) {
+                if(strpos($rivi, $vh_muoto) !== false) {
+                    $stats[$j_id]['o']++;
+                    if(preg_match('/^(\d+)\./', trim($rivi), $match)) {
+                        $sija = intval($match[1]);
+                        if($sija == 1) $stats[$j_id]['v']++;
+                        elseif($sija <= 10) $stats[$j_id]['s']++;
+                    }
+                }
+            }
+        }
+
+        // Päivitetään tietokantaan vain jos statsit löytyivät
+        if(!empty($stats)) {
+            foreach($stats as $jaos_id => $s) {
+                $this->db->query("INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
+                                 VALUES ($nro, $jaos_id, {$s['v']}, {$s['s']}, {$s['o']}) 
+                                 ON DUPLICATE KEY UPDATE voi={$s['v']}, sij={$s['s']}, os={$s['o']}");
+            }
+        }
+
+        // Tulostetaan edistyminen terminaaliin
+        if($i % 10 == 0) {
+            echo "Käsitelty: $i / $yhteensa ($vh_muoto)\n";
+        }
+    }
+    echo "\nURAKKA VALMIS!\n";
+}
 	
 }
 ?>

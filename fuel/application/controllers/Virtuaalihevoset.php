@@ -2096,29 +2096,34 @@ class Virtuaalihevoset extends CI_Controller
             
     }
 
-public function korjaa_statsit() {
-    // 1. Otetaan yhteys suoraan MySQL-pohjaisesti ohi CodeIgniterin hitauden
-    $db_handle = $this->db->conn_id;
+	public function korjaa_statsit() {
+    echo "<h2>Diagnostiikka käynnissä...</h2>";
+    
+    // Testataan vain yhdellä numerolla
+    $testi_nro = 180260145; 
+    
+    echo "Haetaan näyte arkistosta numerolla $testi_nro... <br>";
+    
+    // Haetaan vain 1 rivi, jotta nähdään onko yhteys edes auki
+    $query = $this->db->query("SELECT * FROM vrlv3_kilpailut_tulokset LIMIT 1");
+    if ($query->num_rows() > 0) {
+        $row = $query->row_array();
+        echo "Yhteys arkistoon toimii! Esimerkkirivi arkistosta:<br>";
+        echo "Reknro arkistossa on muodossa: <strong>" . $row['reknro'] . "</strong> (Tyyppi: " . gettype($row['reknro']) . ")<br>";
+    } else {
+        echo "Arkistotaulu näyttää olevan tyhjä tai siihen ei saada yhteyttä.<br>";
+        return;
+    }
 
-    echo "<h2>Kevyt-päivitys</h2>";
-
-    // Kokeillaan päivittää sijoitukset yhdelle hevoselle kerrallaan 
-    // suoralla SQL-komennolla, joka on yleensä nopeampi.
-    $reknrot = array(180260145, 180250004, 18260145, 18250004);
-
-    foreach($reknrot as $nro) {
-        echo "Päivitetään $nro... ";
-        
-        // Tämä komento vain YRITTÄÄ päivittää. Jos se kestää yli 5 sekuntia, se katkaistaan.
-        $sql = "UPDATE vrlv3_hevosrekisteri_kisatiedot 
-                SET os = (SELECT COUNT(*) FROM vrlv3_kilpailut_tulokset WHERE reknro = $nro) 
-                WHERE reknro = $nro";
-        
-        if($this->db->simple_query($sql)) {
-            echo "OK!<br>";
-        } else {
-            echo "Virhe tai aikakatkaisu.<br>";
-        }
+    // Jos pääsimme tänne, yritetään hakea testihevosen tiedot
+    $q = $this->db->query("SELECT jaos, sija FROM vrlv3_kilpailut_tulokset WHERE reknro = " . $this->db->escape($testi_nro));
+    echo "Kysely suoritettu... Tuloksia: " . $q->num_rows() . "<br>";
+    
+    if($q->num_rows() == 0) {
+        echo "Ei löytynyt tällä numerolla. Kokeillaan ilman nollia...<br>";
+        $testi_nro_2 = 18260145;
+        $q2 = $this->db->query("SELECT jaos, sija FROM vrlv3_kilpailut_tulokset WHERE reknro = " . $this->db->escape($testi_nro_2));
+        echo "Tuloksia ilman nollia: " . $q2->num_rows() . "<br>";
     }
 }
 	

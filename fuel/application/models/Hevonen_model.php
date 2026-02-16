@@ -1153,44 +1153,24 @@ class Hevonen_model extends Base_module_model
     }
     
        //porrastetut
-   public function get_horse_sport_info_by_jaos($reknro)
-{
-    $muunnettu_reknro = $this->CI->vrl_helper->vh_to_number($reknro);
-    
-    // DEBUG-ALKU
-    echo "<script>
-        console.group('VRL DEBUG: Hevosen tilastohaku');
-        console.log('Alkuperäinen tunnus: " . $reknro . "');
-        console.log('vh_to_number tulos: " . $muunnettu_reknro . "');
-    </script>";
-    // DEBUG-LOPPU
-
-    $this->db->select('*');
-    $this->db->from('vrlv3_hevosrekisteri_kisatiedot');
-    $this->db->where('reknro', $muunnettu_reknro);
-    $query = $this->db->get();
-    
-    // DEBUG-LISÄYS
-    echo "<script>
-        console.log('Tietokantahaku tehty tauluun vrlv3_hevosrekisteri_kisatiedot');
-        console.log('Löydettyjä rivejä yhteensä: " . $query->num_rows() . "');
-    </script>";
-
-    $results = array();
-
-    if ($query->num_rows() > 0) {
-        foreach ($query->result_array() as $row) {
-            $results[$row['jaos']] = $row;
-            // Logataan jokainen löytynyt jaos-rivi erikseen
-            echo "<script>console.log('Löytyi dataa jaokselle ID: " . $row['jaos'] . " (voitot: " . $row['voi'] . ", porr_voitot: " . $row['porr_voi'] . ")');</script>";
+    function get_horse_sport_info_by_jaos($reknro)
+    {
+        $this->db->select('*');
+        $this->db->from('vrlv3_hevosrekisteri_kisatiedot');
+        $this->db->where('reknro', $this->CI->vrl_helper->vh_to_number($reknro));
+        $query = $this->db->get();
+        
+        if ($query->num_rows() > 0)
+        {
+            $result = array();
+            foreach($query->result_array() as $row){
+                $result[$row['jaos']] = $row;
+            }
+            return $result;
         }
-    } else {
-        echo "<script>console.warn('VAROITUS: Tietokannasta ei löytynyt YHTÄÄN riviä tälle tunnukselle.');</script>";
+        
+        return array();
     }
-
-    echo "<script>console.groupEnd();</script>";
-    return $results;
-}
     
     //stats
     function get_stats_breed($rotu){

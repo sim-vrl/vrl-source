@@ -3,39 +3,40 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Update_stats extends CI_Controller {
   
-  public function __construct() {
+    public function __construct() {
         parent::__construct();
-        // Ladataan Ion Auth kirjasto, jotta voidaan tarkistaa oikeudet
         $this->load->library('ion_auth');
     }
 
     public function update_stats() {
-      if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin()) {
-        show_error('Sinulla ei ole oikeuksia suorittaa tätä toimintoa. Vain ylläpitäjät voivat päivittää tilastoja.', 403);
-    }
+        if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin()) {
+            show_error('Vain ylläpitäjät voivat päivittää tilastoja.', 403);
+        }
+        
         set_time_limit(0);
         
-        $nro = 250440150; // rekisterinumero
+        $nro = 250440150; // Rekisterinumero ilman VH-etuliitettä
 
-        // Haetaan osat viivallista hakua varten
+        // Luodaan eri hakumuodot
         $vuosi = substr($nro, 0, 2);
         $rotu = substr($nro, 2, 3);
         $yksilo = substr($nro, 5, 4);
-        $vh_muoto_pitka = $vuosi . "-" . $rotu . "-" . $yksilo;
+        
+        $vh_viivalla = $vuosi . "-" . $rotu . "-" . $yksilo; // 25-044-0150
+        $vh_prefix = "VH" . $vh_viivalla;                  // VH25-044-0150
 
         echo "<h2>Käynnistetään sijoitusstatistiikan korjaus: $nro</h2>";
+        echo "Etsitään muodoilla: $nro, $vh_viivalla, $vh_prefix... <br>";
         
         $stats = array();
 
-        // SQL-haku on turvallinen sadoille tuhansille riveille kisaosallis-suodattimen ansiosta
-      $sql = "SELECT t.tulokset, k.jaos 
-        FROM vrlv3_kisat_tulokset t 
-        JOIN vrlv3_kisat_kisakalenteri k ON t.kisa_id = k.kisa_id 
-        WHERE t.kisa_id IN (
-            SELECT kisa_id 
-            FROM vrlv3_kisat_kisaosallis 
-            WHERE VH = '$nro'
-        )";
+        // PLAN B: Haetaan suoraan tekstistä LIKE-haulla, koska osallistujataulu on tyhjä
+        $sql = "SELECT t.tulokset, k.jaos 
+                FROM vrlv3_kisat_tulokset t 
+                JOIN vrlv3_kisat_kisakalenteri k ON t.kisa_id = k.kisa_id 
+                WHERE t.tulokset LIKE '%$nro%' 
+                   OR t.tulokset LIKE '%$vh_viivalla%' 
+                   OR t.tulokset LIKE '%$vh_prefix%'";
     
         $q = $this->db->query($sql);
 
@@ -45,7 +46,7 @@ class Update_stats extends CI_Controller {
                 $stats[$j_id] = array('v'=>0, 's'=>0, 'o'=>0); 
             }
 
-            // PERINTEISET KISAT: Luokat on erotettu ~ merkillä
+            // Luokat on erotettu ~ merkillä
             $luokat = explode("~", $row['tulokset']);
             
             foreach($luokat as $luokka_teksti) {
@@ -55,14 +56,16 @@ class Update_stats extends CI_Controller {
                 $osallistujat_tassa_luokassa = 0;
                 $hevosen_sija = 0;
 
-                // 1. Lasketaan luokan osallistujat (rivit jotka alkaa numerolla)
+                // 1. Lasketaan luokan osallistujat ja etsitään hevonen
                 foreach($luokan_rivit as $rivi) {
                     $rivi = trim($rivi);
                     if(preg_match('/^(\d+)\./', $rivi, $match)) {
                         $osallistujat_tassa_luokassa++;
                         
-                        // Tarkistetaan onko hevonen tällä rivillä
-                        if(strpos($rivi, (string)$nro) !== false || strpos($rivi, $vh_muoto_pitka) !== false) {
+                        // Tarkistetaan löytyykö jokin numeromuodoista riviltä
+                        if(strpos($rivi, (string)$nro) !== false || 
+                           strpos($rivi, $vh_viivalla) !== false || 
+                           strpos($rivi, $vh_prefix) !== false) {
                             $hevosen_sija = intval($match[1]);
                         }
                     }
@@ -70,7 +73,7 @@ class Update_stats extends CI_Controller {
 
                 // 2. Jos hevonen löytyi, sovelletaan VRL-sijoituskaavaa
                 if($hevosen_sija > 0) {
-                    $stats[$j_id]['o']++; // Osallistuminen lasketaan aina
+                    $stats[$j_id]['o']++; 
 
                     $max_sij = 0;
                     $n = $osallistujat_tassa_luokassa;
@@ -88,7 +91,7 @@ class Update_stats extends CI_Controller {
 
                     if($hevosen_sija == 1) {
                         $stats[$j_id]['v']++;
-                        $stats[$j_id]['s']++; // Voitto on myös sijoitus
+                        $stats[$j_id]['s']++; 
                     } elseif($hevosen_sija <= $max_sij) {
                         $stats[$j_id]['s']++;
                     }
@@ -106,7 +109,7 @@ class Update_stats extends CI_Controller {
             }
             echo "<h3>Maliinan tilastot päivitetty onnistuneesti!</h3>";
         } else {
-            echo "Hevoselle $nro ei löytynyt tuloksia.";
+            echo "Hevoselle $nro ei löytynyt tuloksia tekstihallakaan.";
         }
     }
 }

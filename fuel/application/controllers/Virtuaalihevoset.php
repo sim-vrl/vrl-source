@@ -140,36 +140,15 @@ class Virtuaalihevoset extends CI_Controller
             $vars['porr_levels'] = $this->load->view('hevoset/porrastetut_levels', $vars, TRUE);
 
             $vars['kilpailut'] = "Perinteisten kilpailujen tiedot puuttuvat.";
-      } else if ($sivu == 'kilpailut'){
+        } else if ($sivu == 'kilpailut'){
             $this->load->model("Jaos_model");
             $jaokset = $this->Jaos_model->get_jaokset_all();
             foreach ($jaokset as $jaos){
                 $vars['jaokset'][$jaos['id']] = $jaos;
             }
             $vars['kisatiedot'] = $this->hevonen_model->get_horse_sport_info_by_jaos($reknro);
-
-            // --- KORJAUS ALKAA ---
-            $puhdistettu_reknro = $this->vrl_helper->vh_to_number($reknro);
-            // Jos kisatietoja ei löytynyt tai ne ovat tyhjät, katsotaan löytyykö arkistosta
-            if(empty($vars['kisatiedot'])){
-                $arkisto_jaokset = $this->db->query("SELECT DISTINCT jaos FROM vrlv3_kilpailut_tulokset WHERE reknro = " . $this->db->escape($puhdistettu_reknro))->result_array();
-                
-                foreach($arkisto_jaokset as $aj) {
-                    $js = $aj['jaos'];
-                    $voi = $this->db->where(['reknro' => $puhdistettu_reknro, 'jaos' => $js, 'sija' => 1])->count_all_results('vrlv3_kilpailut_tulokset');
-                    $sij = $this->db->where(['reknro' => $puhdistettu_reknro, 'jaos' => $js, 'sija >' => 1, 'sija <=' => 10])->count_all_results('vrlv3_kilpailut_tulokset');
-                    $os  = $this->db->where(['reknro' => $puhdistettu_reknro, 'jaos' => $js])->count_all_results('vrlv3_kilpailut_tulokset');
-                    
-                    $this->db->query("INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
-                                      VALUES (" . $this->db->escape($puhdistettu_reknro) . ", " . $this->db->escape($js) . ", $voi, $sij, $os) 
-                                      ON DUPLICATE KEY UPDATE voi=$voi, sij=$sij, os=$os");
-                }
-                // Päivitetään kisatiedot-muuttuja uuden haun jälkeen
-                $vars['kisatiedot'] = $this->hevonen_model->get_horse_sport_info_by_jaos($reknro);
-            }
-            // --- KORJAUS PÄÄTTYY ---
-
             $vars['kilpailut'] = $this->load->view('hevoset/kilpailut_stats', $vars, TRUE);
+            
         }
         else {
             $vars['suku'] = array();

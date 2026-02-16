@@ -298,45 +298,54 @@ class Kisajarjestelma
         $hylsyt = explode("~",$tulos['hylatyt']);
 				
 		// Käydään läpi jokainen luokka
-		for($i = 0; $i <= $luokkien_maara-1; $i++) {
-			/*print	'<p>'.
-					'<strong>'.$luokat[$i].'</strong> <br >';*/
-			
-			$voittajat = explode("\n",$tulokset[$i]);
-			$voittajat_maara = sizeof($voittajat);
-			
-			if ($voittajat_maara > 100) {$voittajat_maara = 100;}
-			
-			
-			for($j = 0; $j <= $voittajat_maara-1; $j++) {
+        for($i = 0; $i <= $luokkien_maara-1; $i++) {
+            
+            $voittajat = explode("\n", $tulokset[$i]);
+            $voittajat_maara = sizeof($voittajat);
+            
+            if ($voittajat_maara > 100) {$voittajat_maara = 100;}
+            
+            // Alustetaan laskuri, joka seuraa sijoituksia ja hyppää tyhjät rivit yli
+            $todellinen_sija = 1; 
 
-                //haetaan osallistumisriviltä VH
-                $tunnuksia = preg_match_all('/\VH[0-9]{2}\-[0-9]{3}\-[0-9]{4}/', $voittajat[$j] , $osumat);
-					
-				if ($tunnuksia > 0){
+            for($j = 0; $j <= $voittajat_maara-1; $j++) {
+
+                // SIIVOUS: Poistetaan välilyönnit ja näkymättömät \r merkit
+                $rivi = trim($voittajat[$j]);
+
+                // Jos rivi on tyhjä, hypätään sen yli kasvattamatta sijoitusta
+                if (empty($rivi)) {
+                    continue;
+                }
+
+                // Haetaan osallistumisriviltä VH (tehty joustavammaksi: väliviiva valinnainen)
+                $tunnuksia = preg_match_all('/VH[0-9]{2}-?[0-9]{3}-?[0-9]{4}/', $rivi, $osumat);
+                    
+                if ($tunnuksia > 0){
                 
                     foreach($osumat[0] as $osuma){
                         // Otetaan se talteen.
                         $vh = $this->CI->vrl_helper->vh_to_number($osuma);
                         array_push($vh_list, $vh);
                         
-                        //jos kyse voitosta tai sijoituksesta
-                        if($this->sijoittuu($voittajat_maara, $jaos) >= ($j+1)){
-                            //voitto
-                            if($j == 0){
+                        // Käytetään $todellinen_sija -muuttujaa sijoituksen tarkistamiseen
+                        if($this->sijoittuu($voittajat_maara, $jaos) >= $todellinen_sija){
+                            // voitto
+                            if($todellinen_sija == 1){
                                 $this->_sort_stats_temp_array($vh, $voi);
                             }
-                            //sijoitus
+                            // sijoitus
                             else {
                                 $this->_sort_stats_temp_array($vh, $sij);
-
                             }
-                            
                         }
                         
-                        //osallistuminen lisätään kaikille
+                        // osallistuminen lisätään kaikille
                         $this->_sort_stats_temp_array($vh, $os);
                     }
+                    
+                    // Kasvatetaan sijoitusta vain kun riviltä löytyi oikea osallistuja
+                    $todellinen_sija++;
                 }
             }
         }

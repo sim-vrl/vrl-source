@@ -2097,58 +2097,57 @@ class Virtuaalihevoset extends CI_Controller
     }
 
 public function korjaa_statsit() {
-    // Nostetaan rajoja, koska tekstin analysointi vie aikaa
-    ini_set('memory_limit', '512M');
-    set_time_limit(0);
+    set_time_limit(0); // Yrittää estää PHP:ta katkaisemasta ajoa
 
-    // Hevoset, jotka haluat korjata
-    $etsityt_hevoset = array('VH18-026-0145', 'VH25-044-0150', 'VH25-043-0018');
-    
-    echo "<h2>Aloitetaan tekstianalyysi...</h2>";
+    // KÄYTÄ NUMEROA TÄSSÄ:
+    $hevoset = array(180260145); 
 
-    foreach($etsityt_hevoset as $vh_nro) {
-        // Puhdistetaan numero pelkäksi numeroksi (esim. 180260145) hakuun, jos tarpeen
-        $puhdas_nro = str_replace(array('VH', '-'), '', $vh_nro);
-        $stats = array(); // [jaos_id => [voi, sij, os]]
+    foreach($hevoset as $nro) {
+        // Muunnetaan numero muotoon VH18-026-0145 hakuun
+        $vuosi = substr($nro, 0, 2);
+        $jaos = substr($nro, 2, 3);
+        $yksilo = substr($nro, 5, 4);
+        $vh_muoto = "VH" . $vuosi . "-" . $jaos . "-" . $yksilo;
 
-        // Haetaan kaikki tulokset, joissa tämä VH-numero esiintyy
+        echo "Etsitään: $vh_muoto... <br>";
+
+        $stats = array();
+
+        // TÄRKEÄÄ: Haetaan vain tarvittavat sarakkeet
         $q = $this->db->query("SELECT t.tulokset, k.jaos FROM vrlv3_kisat_tulokset t 
                                JOIN vrlv3_kisat_kisakalenteri k ON t.kisa_id = k.kisa_id 
-                               WHERE t.tulokset LIKE '%$vh_nro%'");
+                               WHERE t.tulokset LIKE '%$vh_muoto%'");
 
         foreach($q->result_array() as $row) {
-            $jaos = $row['jaos'];
-            if(!isset($stats[$jaos])) { $stats[$jaos] = array('v'=>0, 's'=>0, 'o'=>0); }
+            $j_id = $row['jaos'];
+            if(!isset($stats[$j_id])) { $stats[$j_id] = array('v'=>0, 's'=>0, 'o'=>0); }
 
-            // Pilkotaan teksti riveihin
-            $rivit = explode("\n", str_replace("\r", "", $row['tulokset']));
-            
+            $rivit = explode("\n", $row['tulokset']);
             foreach($rivit as $rivi) {
-                if(strpos($rivi, $vh_nro) !== false) {
-                    $stats[$jaos]['o']++; // Osallistuminen löytyi
-                    
-                    // Etsitään sija rivin alusta (esim "1. mibula...")
+                if(strpos($rivi, $vh_muoto) !== false) {
+                    $stats[$j_id]['o']++;
+                    // Etsitään numero ja piste rivin alusta
                     if(preg_match('/^(\d+)\./', trim($rivi), $match)) {
                         $sija = intval($match[1]);
-                        if($sija == 1) { $stats[$jaos]['v']++; }
-                        if($sija > 1 && $sija <= 10) { $stats[$jaos]['s']++; }
+                        if($sija == 1) $stats[$j_id]['v']++;
+                        elseif($sija <= 10) $stats[$j_id]['s']++;
                     }
                 }
             }
         }
 
-        // Tallennetaan tulokset kantaan
-        foreach($stats as $jaos_id => $s) {
-            $sql = "INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
-                    VALUES ($puhdas_nro, $jaos_id, {$s['v']}, {$s['s']}, {$s['o']}) 
-                    ON DUPLICATE KEY UPDATE voi={$s['v']}, sij={$s['s']}, os={$s['o']}";
-            $this->db->query($sql);
+        // Tallenna tulokset (vain jos löytyi jotain)
+        if(!empty($stats)) {
+            foreach($stats as $jaos_id => $s) {
+                $this->db->query("INSERT INTO vrlv3_hevosrekisteri_kisatiedot (reknro, jaos, voi, sij, os) 
+                                 VALUES ($nro, $jaos_id, {$s['v']}, {$s['s']}, {$s['o']}) 
+                                 ON DUPLICATE KEY UPDATE voi={$s['v']}, sij={$s['s']}, os={$s['o']}");
+            }
+            echo "Hevonen $vh_muoto päivitetty onnistuneesti!<br>";
+        } else {
+            echo "Hevoselle $vh_muoto ei löytynyt tuloksia.<br>";
         }
-        
-        echo "Hevonen $vh_nro päivitetty! (Löytyi ".array_sum(array_column($stats, 'o'))." starttia)<br>";
-        flush();
     }
-    echo "<h3>Kaikki valmista!</h3>";
 }
 	
 }

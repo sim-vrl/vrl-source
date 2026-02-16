@@ -9,9 +9,13 @@ class Update_stats extends CI_Controller {
     }
 
     public function update_stats() {
+$is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
+    
+    if (!$is_cli) {
         if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin()) {
-            show_error('Vain ylläpitäjät voivat päivittää tilastoja.', 403);
+            show_error('Pääsy kielletty.', 403);
         }
+    }
         
         set_time_limit(0);
         

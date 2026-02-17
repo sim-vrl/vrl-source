@@ -19,7 +19,7 @@ $is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
         
         set_time_limit(0);
         
-        $nro = 230220171; // Rekisterinumero ilman VH-etuliitettä
+        $nro = 110310614; // Rekisterinumero ilman VH-etuliitettä
 
         // Luodaan eri hakumuodot
         $vuosi = substr($nro, 0, 2);

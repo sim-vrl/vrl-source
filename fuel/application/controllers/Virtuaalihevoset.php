@@ -1305,7 +1305,19 @@ class Virtuaalihevoset extends CI_Controller
 		
 		$vars['title'] = 'Rodut ja lyhenteet';
 				
-		$vars['text_view'] = "";
+		$vars['text_view'] = "<h3>Puuttuuko rotu tietokannasta?</h3>
+
+<p>Puuttuvia oikeassa maailmassa olemassa olevia sekä keksittyjä virtuaalirotuja voidaan lisätä VRL:on tietokantaan alla listatuin ehdoin. </p>
+
+<ul>
+<li><b>Rotu on realistinen:</b> vain oikeassa maailmassa nykyaikana esiintyvät ja oikeassa elämässä realistisesti jalostuksella saavutettavat rodut (esim. sim-game sporthorse, ei sellaiset joilla on esimerkiksi lisäraajoja tai toisen eläinlajin fyysisiä ominaisuuksia).</li>
+<li><b>Rodulla on rotumääritelmä:</b> näyttely- ja kantakirjatuomarointiin soveltuva suomenkielinen rotumääritelmä, joka voi olla jo netistä valmiiksi löytyvä tai harrastajan kirjoittama. Tarvittavien tietojen hakemiseen ja vaatimuksia vastaavan kuvauksen kirjoittamiseen on mahdollista saada myös apua rotuvastaavalta. Rotumääritelmän tulee sisältää vähintään kuvauksen rakenteesta, säkäkorkeuden (ihanne, keskiarvo ja/tai rajoitukset) sekä mahdolliset värirajoitukset. </li>
+<li><b>Virtuaalimaailmassa on vähintään 10 elossa olevaa, uniikkia rodun edustajaa:</b> hevoset eroavat toisistaan kuvin tai tekstein, linkitäthän hevoset hakemukseesi.</li>
+<li><b>Elossa olevat hevoset ovat vähintään kolmen (3) harrastajan omistuksessa rotulisäyshakemuksen aikana:</b> nimeäthän erilliset omistajat (nimimerkki) hakemuksessasi.</li>
+</ul>
+
+<p>Voit lähettää valmiin hakemuksen sekä saada lisätietoja tai apua hakemuksen muodostamiseen rotuvastaavalta: <a href=\”mailto:jiru.tihu@hotmail.com\”>jiru.tihu@hotmail.com</a></p>
+";
 		
 		
 		$vars['headers'][1] = array('title' => 'ID', 'key' => 'rotunro', 'key_link' => site_url('virtuaalihevoset/rotu/'));

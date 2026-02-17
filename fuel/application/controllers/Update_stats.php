@@ -19,7 +19,7 @@ $is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
         
         set_time_limit(0);
         
-        $nro = 110310614; // Rekisterinumero ilman VH-etuliitettä
+        $nro = 230220171; // Rekisterinumero ilman VH-etuliitettä
 
         // Luodaan eri hakumuodot
         $vuosi = substr($nro, 0, 2);
@@ -111,7 +111,7 @@ $is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
                                  VALUES ($nro, $jaos_id, {$s['v']}, {$s['s']}, {$s['o']}) 
                                  ON DUPLICATE KEY UPDATE voi={$s['v']}, sij={$s['s']}, os={$s['o']}");
             }
-            echo "Maliinan tilastot päivitetty onnistuneesti!";
+            echo "Hevosen $nro tilastot päivitetty onnistuneesti!";
         } else {
             echo "Hevoselle $nro ei löytynyt tuloksia tekstihallakaan.";
         }

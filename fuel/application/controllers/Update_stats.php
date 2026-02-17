@@ -19,18 +19,18 @@ $is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
         
         set_time_limit(0);
         
-        $nro = 250440150; // Rekisterinumero ilman VH-etuliitettä
+        $nro = 110310614; // Rekisterinumero ilman VH-etuliitettä
 
         // Luodaan eri hakumuodot
         $vuosi = substr($nro, 0, 2);
         $rotu = substr($nro, 2, 3);
         $yksilo = substr($nro, 5, 4);
         
-        $vh_viivalla = $vuosi . "-" . $rotu . "-" . $yksilo; // 25-044-0150
-        $vh_prefix = "VH" . $vh_viivalla;                  // VH25-044-0150
+        $vh_viivalla = $vuosi . "-" . $rotu . "-" . $yksilo; // muoto 25-044-0150
+        $vh_prefix = "VH" . $vh_viivalla;                  // muoto VH25-044-0150
 
-        echo "<h2>Käynnistetään sijoitusstatistiikan korjaus: $nro</h2>";
-        echo "Etsitään muodoilla: $nro, $vh_viivalla, $vh_prefix... <br>";
+        echo "Käynnistetään sijoitusstatistiikan korjaus: $nro ...";
+        echo "Etsitään muodoilla: $nro, $vh_viivalla, $vh_prefix ... ";
         
         $stats = array();
 
@@ -111,7 +111,7 @@ $is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
                                  VALUES ($nro, $jaos_id, {$s['v']}, {$s['s']}, {$s['o']}) 
                                  ON DUPLICATE KEY UPDATE voi={$s['v']}, sij={$s['s']}, os={$s['o']}");
             }
-            echo "<h3>Maliinan tilastot päivitetty onnistuneesti!</h3>";
+            echo "Maliinan tilastot päivitetty onnistuneesti!";
         } else {
             echo "Hevoselle $nro ei löytynyt tuloksia tekstihallakaan.";
         }

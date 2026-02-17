@@ -76,30 +76,30 @@ $is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
                 }
 
                 // 2. Jos hevonen löytyi, sovelletaan VRL-sijoituskaavaa
-                if($hevosen_sija > 0) {
-                    $stats[$j_id]['o']++; 
+if($hevosen_sija > 0) {
+    $stats[$j_id]['o']++; // Osallistuminen lasketaan aina
 
-                    $max_sij = 0;
-                    $n = $osallistujat_tassa_luokassa;
+    $max_sij = 0;
+    $n = $osallistujat_tassa_luokassa;
 
-                    if($n >= 100) $max_sij = 10;
-                    elseif($n >= 81) $max_sij = 9;
-                    elseif($n >= 64) $max_sij = 8;
-                    elseif($n >= 49) $max_sij = 7;
-                    elseif($n >= 36) $max_sij = 6;
-                    elseif($n >= 25) $max_sij = 5;
-                    elseif($n >= 16) $max_sij = 4;
-                    elseif($n >= 9)  $max_sij = 3;
-                    elseif($n >= 4)  $max_sij = 2;
-                    elseif($n >= 1)  $max_sij = 1;
+    // VRL-sijoituskaava
+    if($n >= 100) $max_sij = 10;
+    elseif($n >= 81) $max_sij = 9;
+    elseif($n >= 64) $max_sij = 8;
+    elseif($n >= 49) $max_sij = 7;
+    elseif($n >= 36) $max_sij = 6;
+    elseif($n >= 25) $max_sij = 5;
+    elseif($n >= 16) $max_sij = 4;
+    elseif($n >= 9)  $max_sij = 3;
+    elseif($n >= 4)  $max_sij = 2;
+    elseif($n >= 1)  $max_sij = 1;
 
-                    if($hevosen_sija == 1) {
-                        $stats[$j_id]['v']++;
-                        $stats[$j_id]['s']++; 
-                    } elseif($hevosen_sija <= $max_sij) {
-                        $stats[$j_id]['s']++;
-                    }
-                }
+    if($hevosen_sija == 1) {
+        $stats[$j_id]['v']++; // Vain voittoihin, ei sijoituksiin
+    } elseif($hevosen_sija <= $max_sij) {
+        $stats[$j_id]['s']++; // Sijat 2 -> max_sij
+    }
+}
             }
         }
 

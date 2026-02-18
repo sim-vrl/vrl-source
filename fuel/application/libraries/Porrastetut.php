@@ -22,8 +22,8 @@ class Porrastetut
     private $aste = array(1=> "Seurataso", 2=>"Aluetaso", 3=> "Kansallinen taso");
     
     private $koulutustasot = array(
-        1=>"Vt1: ERJ: 40cm, 60cm / KRJ: HeD / KERJ: Mini / MEJ: 50cm ja alle",       
-        2=>"Vt2: <small><small>ERJ: 80cm, 90cm / KRJ: HeC, KN Special, HeB / KERJ: Aloittelija, Harraste, Tutustumis, Helppo / MEJ: 60cm, 70cm, 80cm</small></small>",
+        1=>"Vt1: <small>ERJ: 40cm, 60cm / KRJ: HeD / KERJ: Mini, Aloittelija, Harraste, Tutustumis / MEJ: 50cm ja alle</small>",       
+        2=>"Vt2: <small>ERJ: 80cm, 90cm / KRJ: HeC, KN Special, HeB / KERJ: Helppo / MEJ: 60cm, 70cm, 80cm</small>",
         3=>"Vt3: VVJ: Noviisi",
         4=>"Vt4: <small><small>ERJ: 100cm / KRJ: HeA / KERJ: CIC1 / WRJ: Halter Showmanship, Halter, Western Horsemanship, Western Trail / MEJ: 90cm</small></small>",
         5=>"Vt5: <small>ERJ: 110cm / KRJ: VaB / KERJ: CIC2 / VVJ: Helppo / WRJ: Trail-in-Hand, Western Pleasure, Ranch Trail / MEJ: 100cm</small>",

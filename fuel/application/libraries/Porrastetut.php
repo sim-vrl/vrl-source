@@ -23,7 +23,7 @@ class Porrastetut
     
     private $koulutustasot = array(
 		0=>"Vt0: ERJ: 60cm ja alle / KRJ: HeD / KERJ: Mini / MEJ: 50cm ja alle",
-        1=>"Vt1: KRJ: HeD / KERJ: Aloittelija, Harraste, Tutustumis / MEJ: 60cm, 70cm",       
+        1=>"Vt1: KERJ: Aloittelija, Harraste, Tutustumis / MEJ: 60cm, 70cm",       
         2=>"Vt2: ERJ: 80cm, 90cm / KRJ: HeC, KN Special, HeB / KERJ: Helppo / MEJ: 80cm",
         3=>"Vt3: VVJ: Noviisi",
         4=>"Vt4: <small><small>ERJ: 100cm / KRJ: HeA / KERJ: CIC1 / WRJ: Halter Showmanship, Halter, Western Horsemanship, Western Trail / MEJ: 90cm</small></small>",

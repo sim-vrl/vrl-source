@@ -103,7 +103,6 @@ if [ "$READY" -ne 1 ]; then
 fi
 
 HTTP_BODY="$(curl -s http://localhost/phpinfo_verify.php)"
-echo "$HTTP_BODY" > /tmp/phpinfo_verify_body.html 2>/dev/null || true
 HTML_FILE="$(mktemp)"
 echo "$HTTP_BODY" > "$HTML_FILE"
 

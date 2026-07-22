@@ -161,6 +161,38 @@ CREATE TABLE IF NOT EXISTS `vrlv3_tunnukset_yhteystiedot` (
 -- --------------------------------------------------------
 
 --
+-- Rakenne taululle `vrlv3_groups`
+--
+
+CREATE TABLE IF NOT EXISTS `vrlv3_groups` (
+  `id` mediumint(8) UNSIGNED NOT NULL,
+  `name` varchar(20) NOT NULL,
+  `description` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Vedos taulusta `vrlv3_groups`
+--
+
+INSERT INTO `vrlv3_groups` (`id`, `name`, `description`) VALUES
+(1,'admin','Administrator'),
+(2,'members','General User'),
+(3,'tiedotukset','Tiedotusten julkaisija'),
+(4,'tunnukset','Tunnusrekisterin yllapito'),
+(5,'hevosrekisteri','Hevosrekisterityöntekijä'),
+(6,'tallirekisteri','Tallirekisterityöntekijä'),
+(7,'jaos','Jaosvastaava'),
+(8,'tyovoima','Työvoimavastaava'),
+(9,'jaos-yp','Jaoksen ylläpitäjä'),
+(10,'kisakalenteri','Kalenterityöntekijä'),
+(11,'alayhdistys-yp','Alayhdistyksen ylläpito'),
+(12,'alayhdistys-w','Alayhdistyksen työntekijä'),
+(13,'alayhdistys','Alayhdistysvastaava'),
+(14,'kasvattajanimet','Kasvattajanimirekisteritiimi');
+
+-- --------------------------------------------------------
+
+--
 -- Rakenne taululle `vrlv3_users_groups`
 --
 
@@ -268,7 +300,7 @@ ALTER TABLE `vrlv3_users_groups`
 -- AUTO_INCREMENT for table `vrlv3_groups`
 --
 ALTER TABLE `vrlv3_groups`
-  MODIFY `id` mediumint(8) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` mediumint(8) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `vrlv3_tunnukset`

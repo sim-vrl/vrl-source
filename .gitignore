@@ -10,4 +10,6 @@ wiki_w
 .planning
 .claude
 phpinfo.md
-vrl_prod_dump_072026.sql
+vrl_prod_dump_*.sql
+vrl_prod_dump_*.zip
+vrl_prod_dump_*.gz

@@ -84,6 +84,56 @@ Verkko-osoite: `http://localhost`
 
 PHPMyAdmin: `http://localhost:8080`
 
+### Anonymisoidun tuotantodumpin tuonti
+
+Tuotannosta anonymisoitu dumppi (esim. `vrl_prod_dump_072026_anonymized.sql`, ks. `anonymize_dump.py`) tuodaan `db`-containeriin seuraavasti. Kontin sisällä oleva tietokanta on nimeltään `mariadb`.
+
+1. Kopioi dumppi containerin sisään (nopeampaa ja luotettavampaa kuin putkittaa iso tiedosto suoraan `docker exec`:n läpi):
+
+```sh
+docker cp vrl_prod_dump_072026_anonymized.sql db:/tmp/dump.sql
+```
+
+2. (Valinnainen) Nollaa kohdekanta, jos siellä on jo dataa jota ei haluta säilyttää:
+
+```sh
+docker exec db mariadb -u root -e "DROP DATABASE IF EXISTS vrlv3; CREATE DATABASE vrlv3;"
+```
+
+3. Tuo dumppi:
+
+```sh
+docker exec -i db sh -c "exec mariadb -u root vrlv3 < /tmp/dump.sql"
+```
+
+4. Siivoa väliaikaistiedosto pois containerista:
+
+```sh
+docker exec db rm /tmp/dump.sql
+```
+
+Ei erillisiä tunnuksia tarvita: root-käyttäjällä on tyhjä salasana ja tietokanta on nimeltään `vrlv3` (ks. `docker-compose.yml`).
+
+### Käyttäjän salasanan vaihtaminen manuaalisesti
+
+Anonymisoitu dumppi korvaa kaikki salasanat samalla roska-hashilla, joten kirjautumista varten pitää asettaa oma salasana manuaalisesti. Sovellus käyttää PHP:n natiivia `password_hash()`/`password_verify()`-mekanismia (`fuel/application/models/Ion_auth_model.php`), joten hash pitää generoida samalla PHP-versiolla kuin sovellus ajaa:
+
+1. Generoi bcrypt-hash halutulle salasanalle apache-containerissa:
+
+```sh
+docker exec php-apache php -r "echo password_hash('haluttu_salasana', PASSWORD_DEFAULT), PHP_EOL;"
+```
+
+2. Päivitä hash tietokantaan käyttäen heredocia (jottei shell tulkitse hashin `$`-merkkejä muuttujina):
+
+```sh
+docker exec -i db mariadb -u root vrlv3 <<'EOF'
+UPDATE vrlv3_tunnukset SET password='<hash_tähän>' WHERE tunnus=406;
+EOF
+```
+
+`tunnus`-sarake on numeerinen (`int(5) unsigned zerofill`), joten hae käyttäjä ilman etunollia (`tunnus=406`, ei `'00406'`) — zerofill vaikuttaa vain näyttömuotoon, ei tallennettuun arvoon. Vaihtoehtoisesti voi hakea `email`-sarakkeen perusteella. `salt`-sarakkeeseen ei tarvitse koskea, koska nykyaikainen bcrypt-hash on itsenäinen.
+
 # FUEL CMS
 
 FUEL CMS is a [CodeIgniter](https://codeigniter.com) based content management system. To learn more about its features visit: http://www.getfuelcms.com

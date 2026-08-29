@@ -3,8 +3,8 @@
 
 <h2>Pikaviestit</h2>
 
-Voit lähettää pikaviestejä muille VRL-tunnuksille. Luetut viestit säilyvät 30 vuorokautta lähetyksestä, jonka jälkeen ne poistetaan automaattisesti. Halutessasi voit merkata viestin tärkeäksi klikkaamalla . Tärkeitä viestejä ei poisteta. Lähetä vastaus lähettäjälle klikkaamalla .
-Viestissä voi olla korkeintaan 360 merkkiä, eikä viestissä voi käyttää käyttää html-koodeja eikä rivinvaihtoja!
+Voit lähettää pikaviestejä muille VRL-tunnuksille. Luetut viestit säilyvät 30 vuorokautta lähetyksestä, minkä jälkeen ne poistetaan automaattisesti. Halutessasi voit merkata viestin tärkeäksi klikkaamalla tähteä. Tärkeitä viestejä ei poisteta. Lähetä vastaus lähettäjälle klikkaamalla lähetä.
+Viestissä voi olla korkeintaan 360 merkkiä, eikä viestissä voi käyttää html-koodeja eikä rivinvaihtoja!
 
 <p>
     <?php if(!empty(validation_errors())) : ?>

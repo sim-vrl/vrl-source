@@ -532,8 +532,10 @@ class Virtuaalihevoset extends CI_Controller
     }
     
     private function _massatuho_clean_input($input, &$data, $novalue = -1){
-        if($this->input->post($input) && $this->input->post($input) != $novalue){
-            $data[$input] = $this->input->post($input);
+        $val = $this->input->post($input);
+
+        if($val !== null && $val !== '' && $val != $novalue){
+            $data[$input] = $val;
         }
     }
     

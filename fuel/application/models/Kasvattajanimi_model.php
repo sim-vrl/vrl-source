@@ -173,12 +173,22 @@ class Kasvattajanimi_model extends Base_module_model
         
         if(!empty($name))
         {
-            if(strpos($name, '*') !== false)
-                $this->db->where('kasvattajanimi LIKE "' . str_replace('*', '%', $name) . '"');
-            else
-                $this->db->where('kasvattajanimi', $name);
-        }
+            $clean_name = mb_strtolower(trim($name), 'UTF-8');
+
+            if(strpos($clean_name, '*') !== false)
+            {
+                $escaped = $this->db->escape_like_str($clean_name);
+                $search_pattern = str_replace('*', '%', $escaped);
             
+                $this->db->where("LOWER(kasvattajanimi) LIKE '{$search_pattern}'");
+            }
+            else
+            {
+                $escaped = $this->db->escape($clean_name);
+                $this->db->where("LOWER(kasvattajanimi) = {$escaped}");
+            }
+        }
+
         if($breed != '-1')
             $this->db->where('vrlv3_kasvattajanimet_rodut.rotu', $breed);
         

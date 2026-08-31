@@ -1628,7 +1628,7 @@ class Virtuaalihevoset extends CI_Controller
 	}
     
     private function _set_readonly($type, $field, $poni = array()){
-        $readonly = array("nimi", "rotu", "syntymaaika", "sukupuoli", "kuol_pvm", "syntymamaa", "kasvattaja_talli", "kasvattaja_tunnus", "kasvattajanimi"); 
+        $readonly = array("nimi", "rotu", "syntymaaika", "sukupuoli", "kuol_pvm", "syntymamaa", "kasvattaja_talli", "kasvattaja_tunnus"); 
         if($type == 'admin' || $type == 'new'){
             return false; //adminit saa muokata kaikkea, rekisteröintiin saa kirjata kaikkea
         }else if(!isset($poni[$field])){

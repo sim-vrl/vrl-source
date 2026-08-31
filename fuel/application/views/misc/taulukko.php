@@ -147,7 +147,7 @@ if (isset($title2)){
                 $.fn.dataTable.moment( 'DD.MM.YYYY' );
                 
                 $('#result_table').DataTable({
-                    "order": [[ 0, "desc" ]],
+                    "order": [ ],       // was: [ 0, 'desc' ]
                     "lengthMenu": [ 50, 100, 150, 200 ],
                     "pageLength": 50
 

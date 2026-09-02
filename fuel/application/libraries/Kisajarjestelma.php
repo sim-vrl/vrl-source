@@ -271,7 +271,6 @@ class Kisajarjestelma
         
     }
 
-
     //////////////////////////////////////////////////////////////
     // Statistiikka
     //////////////////////////////////////////////////////////////
@@ -381,7 +380,7 @@ class Kisajarjestelma
             } else {
                 // AIEMMAT STATSIT LÖYTYY
                 $data = $stats_info[$horse];
-                $stats_ok = false;
+                $stats_ok = false; // nollataan joka hevoselle, ettei edellisen hevosen arvo vuoda tähän
 
                 if (isset($voi[$horse])) {
                     $new_data[$pre_txt.'voi'] = ($data[$pre_txt.'voi'] ?? 0) + $voi[$horse];

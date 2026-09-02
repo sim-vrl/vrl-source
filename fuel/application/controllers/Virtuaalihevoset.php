@@ -561,6 +561,10 @@ class Virtuaalihevoset extends CI_Controller
                 $breeds[$horse['rotunro']] = $horse['rotu'];
             }
         }
+
+        // Järjestele löydetyt listat aakkosjärjestykseen
+        asort($breeds, SORT_NATURAL | SORT_FLAG_CASE);
+        asort($stables, SORT_NATURAL | SORT_FLAG_CASE);
         
     }
     

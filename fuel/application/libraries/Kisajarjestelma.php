@@ -267,14 +267,19 @@ class Kisajarjestelma
         
     }
     
-    
+        function console_log($data) {
+    echo '<script>';
+    echo 'console.log(' . json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ');';
+    echo '</script>';
+}
+
     
     //////////////////////////////////////////////////////////////
     // Statistiikka
     //////////////////////////////////////////////////////////////
     
-    public function add_stats($tulos, $jaos, $porr = false){    
-        
+    public function add_stats($tulos, $jaos, $porr = false){
+
         $voi = array(); //voittajat
         $sij = array(); //sijoittuneet
         $os = array(); //osallistumiset
@@ -349,74 +354,66 @@ class Kisajarjestelma
                 }
             }
         }
-                        
                 
         $stats_info = $this->_get_horses_stats_info($vh_list, $jaos);
      
                 
         $bulk_add = array();
         $bulk_edit = array();
-        $pre_txt = "";
-        if($porr){ $pre_txt = "porr_";}
-        
-        foreach ($stats_info as $horse=>$data){
+        // Jos porrastettu, kolumnin etuliite porr_
+        $pre_txt = $porr ? "porr_" : "";
+
+        // Etsitään tuloksista uniikit hevoset ja käytetään vh-tunnusta
+        // hakemaan statistiikat $stats_info -arraysta 
+        $unique_horses = array_unique($vh_list);
+
+        foreach ($unique_horses as $horse){
             $new_data = array();
             $new_data['reknro'] = $horse;
               
-            //jos hevosella ei ole tuloksia aiemmalti
-            if(!isset($data['jaos'])){       
+            if (!isset($stats_info[$horse])) {
+                // EI ENNESTÄÄN STATSEJA
                 $new_data['jaos'] = $jaos;
-                $new_data[$pre_txt.'voi'] = 0;
-                $new_data[$pre_txt.'sij'] = 0;
-                $new_data[$pre_txt.'os'] = 0;
+                $new_data[$pre_txt.'voi'] = $voi[$horse] ?? 0;
+                $new_data[$pre_txt.'sij'] = $sij[$horse] ?? 0;
+                $new_data[$pre_txt.'os']  = $os[$horse] ?? 0;
 
-                
-                if(isset($voi[$horse])){
-                    $new_data[$pre_txt.'voi'] = $voi[$horse];
-                }
-                if(isset($sij[$horse])){
-                    $new_data[$pre_txt.'sij'] = $sij[$horse];
-                }
-                if(isset($os[$horse])){
-                    $new_data[$pre_txt.'os'] = $os[$horse];
-                }
-                //jos statistiikkatietoja oli, lisätään
                 $bulk_add[] = $new_data;
-            } //jos hevosella on aiempia *tulok*sia
-            else {
-                 if(isset($voi[$horse])){
-                    $new_data[$pre_txt.'voi'] = $data[$pre_txt.'voi'] + $voi[$horse];
+            } else {
+                // AIEMMAT STATSIT LÖYTYY
+                $data = $stats_info[$horse];
+                $stats_ok = false;
+
+                if (isset($voi[$horse])) {
+                    $new_data[$pre_txt.'voi'] = ($data[$pre_txt.'voi'] ?? 0) + $voi[$horse];
                     $stats_ok = true;
                 }
-                if(isset($sij[$horse])){
-                    $new_data[$pre_txt.'sij'] = $data[$pre_txt.'sij'] + $sij[$horse];
+                if (isset($sij[$horse])) {
+                    $new_data[$pre_txt.'sij'] = ($data[$pre_txt.'sij'] ?? 0) + $sij[$horse];
                     $stats_ok = true;
                 }
-                if(isset($os[$horse])){
-                    $new_data[$pre_txt.'os'] = $data[$pre_txt.'os'] + $os[$horse];
+                if (isset($os[$horse])) {
+                    $new_data[$pre_txt.'os'] = ($data[$pre_txt.'os'] ?? 0) + $os[$horse];
                     $stats_ok = true;
                 }
-                //jos statistiikkatietoja oli, lisätään
-                if($stats_ok){
+
+                if ($stats_ok) {
                     $bulk_edit[] = $new_data;
                 }
             }
-            
         }
 
-        foreach($bulk_edit as $edit){
+        // Tallennetaan tietokantaan
+        foreach ($bulk_edit as $edit) {
             $this->CI->db->where('jaos', $jaos);
             $this->CI->db->where('reknro', $edit['reknro']);
-            unset( $edit['reknro']);
+            unset($edit['reknro']);
             $this->CI->db->update('vrlv3_hevosrekisteri_kisatiedot', $edit);
         }
-        
-        
-        if(sizeof($bulk_add)>0){
-            $this->CI->db->insert_batch('vrlv3_hevosrekisteri_kisatiedot',$bulk_add); 
-        }
-    
-        
+
+        if (sizeof($bulk_add) > 0) {
+            $this->CI->db->insert_batch('vrlv3_hevosrekisteri_kisatiedot', $bulk_add);
+        }        
 
     }
     

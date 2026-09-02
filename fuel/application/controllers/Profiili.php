@@ -229,8 +229,8 @@ class Profiili extends Loggedin_Controller
         $this->load->library('form_builder', array('submit_value' => 'Lähetä'));
         
         // create fields
-        $fields['vastaanottaja'] = array('type' => 'text', 'class'=>'form-control');
-        $fields['viesti'] = array('type' => 'text', 'class'=>'form-control');
+        $fields['vastaanottaja'] = array('type' => 'text', 'class'=>'form-control', 'placeholder' => 'esim. VRL-00000');
+        $fields['viesti'] = array('type' => 'text', 'class'=>'form-control', 'placeholder' => 'Kirjoita viestisi tähän... (max 360 merkkiä)');
 
         $this->form_builder->form_attrs = array('method' => 'post', 'action' => site_url('profiili/pikaviestit'));
 

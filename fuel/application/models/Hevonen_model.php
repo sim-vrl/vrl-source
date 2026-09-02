@@ -1029,7 +1029,7 @@ class Hevonen_model extends Base_module_model
     }
     
     //functions for search
-    function search_horse($reknro = null, $name = null, $rotu=-1, $gender=-1, $dead=null, $color=-1, $birth_year=null, $rek_year = nuöö){
+    function search_horse($reknro = null, $name = null, $rotu=-1, $gender=-1, $dead=null, $color=-1, $birth_year=null, $rek_year = null){
         $this->db->select("h.reknro, h.nimi, r.lyhenne as rotu, h.vari, IF(sukupuoli='1', 'tamma', IF(sukupuoli='2', 'ori', 'ruuna')) as sukupuoli, syntymaaika");
         
         //jos haetaan rekisterinumerolla, millään muulla ei ole väliä

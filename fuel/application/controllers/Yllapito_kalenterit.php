@@ -842,7 +842,7 @@ $this->index();
         }
         $data = array();
         $date = new DateTime();
-        $date->setTimestamp(time() - 60*15); //nykyhetki miinus 15min, eli ei saa ottaa samaa jonoitemiä uudestaan käsittelyyn 15 minuuttiin
+        $date->setTimestamp(time() - 60*5); //nykyhetki miinus 5min, eli ei saa ottaa samaa jonoitemiä uudestaan käsittelyyn 5 minuuttiin
 
         
         $this->db->where('k.jaos', $jaos);

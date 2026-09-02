@@ -230,7 +230,7 @@ class Virtuaalihevoset extends CI_Controller
 
             
             //haetaan hevoset            
-            $horses =  $this->hevonen_model->get_owners_horses($tunnus, true);
+            $horses =  $this->hevonen_model->get_owners_horses($tunnus, false);
             $results =  $this->_massatuho_search($tunnus, $haku, $settings['sarakkeet'], $settings['massatuho']);
             
             

@@ -1618,7 +1618,7 @@ class Virtuaalihevoset extends CI_Controller
              $fields['porr_max_taso_jaos_'.$jaos['id']] = array('label'=> 'Maksimitaso: ' . $jaos['lyhenne'],
                                           'type' => 'select',
                                           'options'=>array('-1'=>'-1', 0=>0, 1=>1, 2=>2, 3=>3, 4=>4, 5=>5, 6=>6, 7=>7, 8=>8, 9=>9, 10=>10),
-                                          'value'=>$poni['tasot'][$jaos['id']] ?? 10, 'class'=>'form-control');
+                                          'value'=>$poni['tasot'][$jaos['id']] ?? -1, 'class'=>'form-control');
          }
 		
         

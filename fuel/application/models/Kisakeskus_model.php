@@ -469,12 +469,12 @@ class Kisakeskus_model extends CI_Model
     
      public function search_results($jaos, $parameters, $nayttelyt = false){
         if($nayttelyt){
-            $this->db->select('kp, j.id as jaos, j.lyhenne as jaoslyhenne, u.hyvaksytty, u.tunnus, k.url, bis_id as tulos_id, jarj_talli, k.kisa_id, u.hyvaksyi');
+            $this->db->select('k.vip, kp, j.id as jaos, j.lyhenne as jaoslyhenne, u.hyvaksytty, u.tunnus, k.url, bis_id as tulos_id, jarj_talli, k.kisa_id, u.hyvaksyi');
             $this->db->from('vrlv3_kisat_nayttelykalenteri as k');
            $this->db->join('vrlv3_kisat_jaokset as j', 'j.id = k.jaos');
            $this->db->join('vrlv3_kisat_nayttelytulokset as u', 'k.kisa_id = u.nayttely_id');
         }else {
-            $this->db->select('kp, j.id as jaos, j.lyhenne as jaoslyhenne, u.hyvaksytty, u.tunnus, k.url, tulos_id, jarj_talli, k.kisa_id, u.hyvaksyi');
+            $this->db->select('k.vip, kp, j.id as jaos, j.lyhenne as jaoslyhenne, u.hyvaksytty, u.tunnus, k.url, tulos_id, jarj_talli, k.kisa_id, u.hyvaksyi');
             $this->db->from('vrlv3_kisat_kisakalenteri as k');
             $this->db->join('vrlv3_kisat_jaokset as j', 'j.id = k.jaos');
             $this->db->join('vrlv3_kisat_tulokset as u', 'k.kisa_id = u.kisa_id');

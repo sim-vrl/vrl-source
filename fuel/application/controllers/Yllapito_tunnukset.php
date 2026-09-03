@@ -240,11 +240,23 @@ class Yllapito_tunnukset extends CI_Controller
     
     private function _edit_user_form($user_id = null){
                         $user = $this->ion_auth->user($user_id)->row();
-                $groups = $this->ion_auth->groups()->result_array();
+                $all_groups = $this->ion_auth->groups()->result_array();
                 $currentGroups = $this->ion_auth->get_users_groups($user_id)->result();
-                $groups = $this->Oikeudet_model->sanitize_automatic_groups($groups);
+                $groups = $this->Oikeudet_model->sanitize_automatic_groups($all_groups);
+
+                //admin-ryhmä (1) näytetään oikeuslistassa vain jos muokkaaja on itse admin
+                if($this->ion_auth->is_admin()){
+                    foreach ($all_groups as $group){
+                        if($group['id'] == 1){
+                            $groups[1] = $group;
+                            break;
+                        }
+                    }
+                    ksort($groups);
+                }
+
                 $group_options = array();
-                
+
                 foreach ($groups as $group){
                     $group_options[$group['id']] = $group['name'] . ' (' . $group['description'] . ')';
                 }
@@ -433,12 +445,17 @@ class Yllapito_tunnukset extends CI_Controller
             
             $removable_group_list = array();
             foreach($groups as $group){
-                
-                $removable_group_list[] = $group['id'];                
+
+                $removable_group_list[] = $group['id'];
 
             }
-            
-            
+
+            //vain admin voi lisätä tai poistaa käyttäjän admin-ryhmästä (1)
+            $editor_is_admin = $this->ion_auth->is_admin();
+            if ($editor_is_admin)
+            {
+                $removable_group_list[] = 1;
+            }
 
             if (isset($groupData) && !empty($groupData))
             {
@@ -446,6 +463,10 @@ class Yllapito_tunnukset extends CI_Controller
 
                 foreach ($groupData as $grp)
                 {
+                    //estä admin-ryhmään lisääminen jos muokkaaja ei ole admin
+                    if ($grp == 1 && !$editor_is_admin)
+                        continue;
+
                     $this->ion_auth->add_to_group($grp, $id);
                 }
 

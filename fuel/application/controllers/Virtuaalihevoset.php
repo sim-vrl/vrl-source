@@ -497,7 +497,33 @@ class Virtuaalihevoset extends CI_Controller
             $vars['headers'][$nro + 1] = array('title' => 'Edit', 'key' => 'reknro', 'key_link' => site_url('virtuaalihevoset/muokkaa/'), 'image' => site_url('assets/images/icons/edit.png'));
         }
                 
-                
+        if ($basic_list) {
+            // Sorts horses by year of registration (newest first), then by breed (A-Z)
+            usort($horses, function($a, $b) {
+                $reknroA = $a['reknro'] ?? '';
+                $reknroB = $b['reknro'] ?? '';
+
+                $yearA = substr($reknroA, 0, 2);
+                $yearB = substr($reknroB, 0, 2);
+
+                // 1. Sort by Year DESC
+                if ($yearA !== $yearB) {
+                    return strcmp($yearB, $yearA);
+                }
+
+                // 2. Sort by Breed ASC
+                $breedA = $a['rotu'] ?? '';
+                $breedB = $b['rotu'] ?? '';
+                if ($breedA !== $breedB) {
+                    return strcasecmp($breedA, $breedB);
+                }
+
+                // 3. Fallback: Sort by full reknro ASC
+                return strcmp($a['reknro'] ?? '', $b['reknro'] ?? '');
+            });
+        }
+
+
         $vars['headers'] = json_encode($vars['headers']);                    
         $vars['data'] = json_encode($horses);
         
@@ -535,6 +561,10 @@ class Virtuaalihevoset extends CI_Controller
                 $breeds[$horse['rotunro']] = $horse['rotu'];
             }
         }
+
+        // Järjestele löydetyt listat aakkosjärjestykseen
+        asort($breeds, SORT_NATURAL | SORT_FLAG_CASE);
+        asort($stables, SORT_NATURAL | SORT_FLAG_CASE);
         
     }
     
@@ -570,7 +600,7 @@ class Virtuaalihevoset extends CI_Controller
         
         
     }
-    
+
     private function _massatuho_suorita($user, &$msg){
         if($this->input->post() && ($this->input->post('lopeta') !== null
                                     || $this->input->post('porr_kylla') !== null

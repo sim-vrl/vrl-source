@@ -230,7 +230,7 @@ class Virtuaalihevoset extends CI_Controller
 
             
             //haetaan hevoset            
-            $horses =  $this->hevonen_model->get_owners_horses($tunnus, true);
+            $horses =  $this->hevonen_model->get_owners_horses($tunnus, false);
             $results =  $this->_massatuho_search($tunnus, $haku, $settings['sarakkeet'], $settings['massatuho']);
             
             
@@ -497,7 +497,33 @@ class Virtuaalihevoset extends CI_Controller
             $vars['headers'][$nro + 1] = array('title' => 'Edit', 'key' => 'reknro', 'key_link' => site_url('virtuaalihevoset/muokkaa/'), 'image' => site_url('assets/images/icons/edit.png'));
         }
                 
-                
+        if ($basic_list) {
+            // Sorts horses by year of registration (newest first), then by breed (A-Z)
+            usort($horses, function($a, $b) {
+                $reknroA = $a['reknro'] ?? '';
+                $reknroB = $b['reknro'] ?? '';
+
+                $yearA = substr($reknroA, 0, 2);
+                $yearB = substr($reknroB, 0, 2);
+
+                // 1. Sort by Year DESC
+                if ($yearA !== $yearB) {
+                    return strcmp($yearB, $yearA);
+                }
+
+                // 2. Sort by Breed ASC
+                $breedA = $a['rotu'] ?? '';
+                $breedB = $b['rotu'] ?? '';
+                if ($breedA !== $breedB) {
+                    return strcasecmp($breedA, $breedB);
+                }
+
+                // 3. Fallback: Sort by full reknro ASC
+                return strcmp($a['reknro'] ?? '', $b['reknro'] ?? '');
+            });
+        }
+
+
         $vars['headers'] = json_encode($vars['headers']);                    
         $vars['data'] = json_encode($horses);
         
@@ -506,8 +532,10 @@ class Virtuaalihevoset extends CI_Controller
     }
     
     private function _massatuho_clean_input($input, &$data, $novalue = -1){
-        if($this->input->post($input) && $this->input->post($input) != $novalue){
-            $data[$input] = $this->input->post($input);
+        $val = $this->input->post($input);
+
+        if($val !== null && $val !== '' && $val != $novalue){
+            $data[$input] = $val;
         }
     }
     
@@ -535,6 +563,10 @@ class Virtuaalihevoset extends CI_Controller
                 $breeds[$horse['rotunro']] = $horse['rotu'];
             }
         }
+
+        // Järjestele löydetyt listat aakkosjärjestykseen
+        asort($breeds, SORT_NATURAL | SORT_FLAG_CASE);
+        asort($stables, SORT_NATURAL | SORT_FLAG_CASE);
         
     }
     
@@ -570,7 +602,7 @@ class Virtuaalihevoset extends CI_Controller
         
         
     }
-    
+
     private function _massatuho_suorita($user, &$msg){
         if($this->input->post() && ($this->input->post('lopeta') !== null
                                     || $this->input->post('porr_kylla') !== null
@@ -1588,7 +1620,7 @@ class Virtuaalihevoset extends CI_Controller
              $fields['porr_max_taso_jaos_'.$jaos['id']] = array('label'=> 'Maksimitaso: ' . $jaos['lyhenne'],
                                           'type' => 'select',
                                           'options'=>array('-1'=>'-1', 0=>0, 1=>1, 2=>2, 3=>3, 4=>4, 5=>5, 6=>6, 7=>7, 8=>8, 9=>9, 10=>10),
-                                          'value'=>$poni['tasot'][$jaos['id']] ?? 10, 'class'=>'form-control');
+                                          'value'=>$poni['tasot'][$jaos['id']] ?? -1, 'class'=>'form-control');
          }
 		
         
@@ -1628,7 +1660,7 @@ class Virtuaalihevoset extends CI_Controller
 	}
     
     private function _set_readonly($type, $field, $poni = array()){
-        $readonly = array("nimi", "rotu", "syntymaaika", "sukupuoli", "kuol_pvm", "syntymamaa", "kasvattaja_talli", "kasvattaja_tunnus", "kasvattajanimi"); 
+        $readonly = array("nimi", "rotu", "syntymaaika", "sukupuoli", "kuol_pvm", "syntymamaa", "kasvattaja_talli", "kasvattaja_tunnus"); 
         if($type == 'admin' || $type == 'new'){
             return false; //adminit saa muokata kaikkea, rekisteröintiin saa kirjata kaikkea
         }else if(!isset($poni[$field])){

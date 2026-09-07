@@ -129,6 +129,8 @@ $route['yllapito/kalenterit/etuuspisteet'] = "yllapito_kalenterit/etuuspisteet";
 $route['yllapito/kalenterit/etuuspisteet/(:any)'] = "yllapito_kalenterit/etuuspisteet/$1";
 $route['yllapito/kalenterit/etuuspisteet/(:any)/(:any)'] = "yllapito_kalenterit/etuuspisteet/$1/$2";
 
+// KERRAN AJETTAVA SKRIPTI, POISTUU
+$route['yllapito/tyh-ajo'] = 'yllapito_kalenterit/recalculate_tyh_stats';
 
 
 

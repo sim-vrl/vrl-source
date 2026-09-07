@@ -61,7 +61,7 @@ class Yllapito_kalenterit extends CI_Controller
     }
     public function pipari(){
 		$this->fuel->pages->render('misc/pipari');
-	}
+    }
     
     
 ////////////////////////////////////////////////////////////////////////////7
@@ -150,6 +150,72 @@ class Yllapito_kalenterit extends CI_Controller
         $this->fuel->pages->render('misc/naytaviesti', array('msg_type' => 'success', 'msg' => $done .' kpl porrastettuja kisoja arvottu. ' . $kpl . ' kpl jäljellä. Paina f5 jos haluat arpoa lisää.'));
 
     }
+
+    public function recalculate_tyh_stats() {
+    $vars = array();
+    $jaos = 8; // TYH
+
+    // 1. Fetch current database stats baseline for TYH
+    $this->db->where('jaos', $jaos);
+    $vars['before_count'] = $this->db->count_all_results('vrlv3_hevosrekisteri_kisatiedot');
+
+    if ($this->input->post('run_tyh')) {
+        set_time_limit(300);
+        ini_set('memory_limit', '256M');
+
+        // 2. Fetch all approved results for TYH
+        $this->db->select('t.luokat, t.tulokset, t.hylatyt, t.kisa_id, k.jaos, k.porrastettu');
+        $this->db->from('vrlv3_kisat_tulokset as t');
+        $this->db->join('vrlv3_kisat_kisakalenteri as k', 'k.kisa_id = t.kisa_id');
+        $this->db->where('k.jaos', $jaos);
+        $this->db->where('t.hyvaksytty IS NOT NULL');
+
+        $query = $this->db->get();
+        $results = $query->result_array();
+
+        if (empty($results)) {
+            $vars['msg'] = "Ei hyväksyttyjä tuloksia jaokselle {$jaos}.";
+            $vars['msg_type'] = "warning";
+        } else {
+            $processed = 0;
+            $samples = array();
+
+            foreach ($results as $tulos) {
+                $porr = $tulos['porrastettu'] ?? 0;
+                $this->kisajarjestelma->add_stats($tulos, $jaos, $porr);
+                $processed++;
+
+                // Capture details of the first 5 processed competitions as visual sample
+                if (count($samples) < 5) {
+                    $samples[] = array(
+                        'kisa_id' => $tulos['kisa_id'],
+                        'porrastettu' => $porr,
+                        'status' => 'Processed'
+                    );
+                }
+            }
+
+            // 3. Count rows after execution
+            $this->db->where('jaos', $jaos);
+            $vars['after_count'] = $this->db->count_all_results('vrlv3_hevosrekisteri_kisatiedot');
+            
+            $vars['processed_count'] = $processed;
+            $vars['processed_samples'] = $samples;
+            $vars['msg'] = "Ajo suoritettu onnistuneesti!";
+            $vars['msg_type'] = "success";
+        }
+    }
+
+
+    // 4. Fetch the 10 latest TYH stat rows to display as an inspection sample
+    $this->db->where('jaos', $jaos);
+    $this->db->order_by('reknro', 'ASC');
+    $this->db->limit(10);
+    $vars['recent_stats_sample'] = $this->db->get('vrlv3_hevosrekisteri_kisatiedot')->result_array();
+
+    $this->fuel->pages->render('yllapito/tyh-ajo', $vars);
+}
+
 
     
     

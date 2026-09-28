@@ -1,6 +1,3 @@
-VRL-10741
-
-
 <h2>Pikaviestit</h2>
 
 Voit lähettää pikaviestejä muille VRL-tunnuksille. Luetut viestit säilyvät 30 vuorokautta lähetyksestä, jonka jälkeen ne poistetaan automaattisesti. Halutessasi voit merkata saapuneen viestin tärkeäksi klikkaamalla tähtikuvaketta. Tärkeitä viestejä ei poisteta. Viestissä ei voi käyttää html-koodeja eikä rivinvaihtoja.

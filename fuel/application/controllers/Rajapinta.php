@@ -7,7 +7,8 @@
  *  1. N+1 queries removed. Parents of all foals are fetched with ONE "WHERE reknro IN (...)"
  *     query (chunked) instead of up to two queries per foal. This affects varsat,
  *     tallinkasvatit and nimenkasvatit.
- *  2. Caching (APCu via apcu_* when available, otherwise CI3's file cache):
+ *  2. Caching with APCu (apcu_*) ONLY. If APCu is not installed/enabled on the server, the
+ *     API runs completely uncached and nothing is written to application/cache.
  *       - divisions/traits tables ......... TTL_TRAITS (they almost never change)
  *       - horse data for porrastetut /
  *         ominaisuudet .................... TTL_DEAD_HORSE for dead horses,
@@ -25,8 +26,7 @@
  * Rows are returned in the same order as before (no added ORDER BY).
  *
  * Cache invalidation: keys are  rj2_horse_<reknro>  for horse data. Call
- *   apcu_delete('rj2_horse_' . (int)$reknro);        // APCu
- *   $this->cache->delete('rj2_horse_' . (int)$reknro); // file cache fallback
+ *   apcu_delete('rj2_horse_' . (int)$reknro);
  * from the code that awards points / changes a horse's levels if you want instant updates.
  * Bump CACHE_PREFIX (rj2_ -> rj3_) to invalidate everything after a deploy.
  */
@@ -60,15 +60,10 @@ class Rajapinta extends CI_Controller
         $this->load->library("vrl_helper");
         $this->load->library("porrastetut");
 
-        // CodeIgniter 3 has no APCu adapter (its 'apc' adapter needs the old APC extension or
-        // apcu_bc, and an unknown adapter name such as 'apcu' makes CI abort with a 500 error).
-        // So APCu is called directly when it is available, and CI's file cache is the fallback
-        // (files in application/cache, which must be writable; if even that fails CI uses a
-        // dummy driver and the API simply runs uncached).
+        // Caching is APCu only. When APCu is missing or disabled, no cache is used at all
+        // (the CI file cache is intentionally NOT loaded, so nothing is written to
+        // application/cache). To disable caching even when APCu exists, set this to false.
         $this->use_apcu = function_exists('apcu_fetch') && function_exists('apcu_enabled') && apcu_enabled();
-        if(!$this->use_apcu){
-            $this->load->driver('cache', array('adapter' => 'file'));
-        }
     }
 
     function index ()
@@ -171,20 +166,20 @@ class Rajapinta extends CI_Controller
     }
 
     // Returns FALSE on a miss (we never store a bare FALSE).
+    // Without APCu this is always a miss, so the data is simply fetched from the database.
     private function _cache_get($key){
         if($this->use_apcu){
             $value = apcu_fetch($key, $found);
             return $found ? $value : FALSE;
         }
-        return $this->cache->get($key);
+        return FALSE;
     }
 
+    // Without APCu this does nothing (no files are written).
     private function _cache_set($key, $value, $seconds){
         if($this->use_apcu){
             apcu_store($key, $value, (int)$seconds);
-            return;
         }
-        $this->cache->save($key, $value, $seconds);
     }
 
     // for results that are a plain list of rows. Empty lists are not cached: ids are not

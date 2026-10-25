@@ -12,7 +12,7 @@
 		<th scope="row">Arvontatapa</th> <td> <?php
             
             $arvontatavat = $tulos['jarjestelma']->arvontatavat_options_legacy();
-				if( empty($tulos['arvontatapa'] || !isset($arvontatavat[$tulos['arvontatapa']]) )) {
+				if( empty($tulos['arvontatapa']) || !isset($arvontatavat[$tulos['arvontatapa']]) ) {
 					print 'Arvontatapaa ei ole valittu';
 				} else {
 					echo $arvontatavat[$tulos['arvontatapa']];
@@ -29,7 +29,7 @@
 	<tr>
 	<?php
 	$url = "";
-	if($tulos['porrastettu'] == 1 && !isset($tulos['url']) && strlen($tulos['url']) < 5) { $url = site_url('kilpailutoiminta/k/'.$tulos['kisa_id']); }
+	if($tulos['porrastettu'] == 1 && (empty($tulos['url']) || strlen($tulos['url']) < 5)) { $url = site_url('kilpailutoiminta/k/'.$tulos['kisa_id']); }
 	else { $url = $tulos['url']; }
 	?>
 		<th scope="row">Kutsu</th> <td> <span><a href="<?php print $url; ?>">www</a></td>
@@ -41,15 +41,15 @@
 		<?php echo $tulos['tulosten_lah']->nimimerkki; ?>, 
 		<a href="<?php echo site_url('tunnus/'.$tulos['tulosten_lah']->tunnus); ?>">VRL-<?php echo $tulos['tulosten_lah']->tunnus; ?></a>
 		
-		<?php if(isset($tulos['takaaja']) && $tulos['takaaja']->tunnus != '00000'){?>
+		<?php if(isset($tulos['takaaja']) && is_object($tulos['takaaja']) && $tulos['takaaja']->tunnus != '00000'){?>
 					(Takaaja: <?php echo $tulos['takaaja']->nimimerkki;?>,
-					<a href="<?php echo site_url('tunnus/'.$tulos['takaaja']); ?>">VRL-<?php echo $kutsu['takaaja']->tunnus; ?></a>)					
+					<a href="<?php echo site_url('tunnus/'.$tulos['takaaja']->tunnus); ?>">VRL-<?php echo $tulos['takaaja']->tunnus; ?></a>)					
 					<?php } ?>
 		</td>
 
 		<th scope ="row">Tulokset hyväksytty</th> <td>
 			<?php 
-					if ( !empty ($tulos['hyvaksytty']) && isset($tulos['hyvaksyi'])) {
+					if ( !empty ($tulos['hyvaksytty']) && isset($tulos['hyvaksyi']) && is_object($tulos['hyvaksyi'])) {
 						print	date("d.m.Y", strtotime($tulos['hyvaksytty'])).'<br />';
                         
 						print	$tulos['hyvaksyi']->nimimerkki . ' <a href="'.site_url()."tunnus/". 'VRL-'.

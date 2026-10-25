@@ -6,8 +6,11 @@ class Kilpailutoiminta extends CI_Controller
         parent::__construct();
 
         $this->load->model('Jaos_model');
-        $this->load->library('Jaos');
-        $this->load->library('Porrastetut');
+        // Tulosarkisto ei tarvitse Jaos- eikä Porrastetut-kirjastoja -> ei ladata turhaan
+        if ($this->router->fetch_method() !== 'tulosarkisto') {
+            $this->load->library('Jaos');
+            $this->load->library('Porrastetut');
+        }
         $this->load->library('Kisajarjestelma');
         $this->load->model('Kisakeskus_model');
     }
@@ -21,6 +24,13 @@ class Kilpailutoiminta extends CI_Controller
     {
         $key = 'vrl_kt_' . $key;
         if (function_exists('apcu_fetch') && ini_get('apc.enabled')) {
+            // apcu_entry lukitsee avaimen generoinnin ajaksi: kun TTL vanhenee,
+            // vain yksi pyyntö ajaa raskaan kyselyn ja muut odottavat sen tulosta.
+            if (function_exists('apcu_entry')) {
+                return apcu_entry($key, function () use ($callback) {
+                    return $callback();
+                }, $ttl);
+            }
             $hit = false;
             $val = apcu_fetch($key, $hit);
             if ($hit) {
@@ -31,6 +41,31 @@ class Kilpailutoiminta extends CI_Controller
             return $val;
         }
         return $callback();
+    }
+
+    /**
+     * Jaosvalinnat tulosarkiston hakulomakkeelle (sama kaikille -> välimuistiin)
+     */
+    private function _result_jaos_options()
+    {
+        return $this->_cached_list('jaos_options_results', 300, function () {
+            return $this->Jaos_model->get_jaos_option_list(false, false, false);
+        });
+    }
+
+    /**
+     * Palauttaa tunnuksen näyttöolion (tunnus, nimimerkki) valmiiksi haetusta joukosta.
+     */
+    private function _pin_to_display($names, $pin)
+    {
+        $key = (int)$pin;
+        if (isset($names[$key])) {
+            return $names[$key];
+        }
+        $o = new stdClass();
+        $o->tunnus = str_pad((string)$key, 5, '0', STR_PAD_LEFT);
+        $o->nimimerkki = '(tuntematon)';
+        return $o;
     }
 
     public function pipari()
@@ -901,7 +936,10 @@ class Kilpailutoiminta extends CI_Controller
 
     function tulosarkisto($type = "perinteiset", $id = null, $id_type = null)
     {
-
+        // Tuntematon tyyppi (esim. /tulosarkisto/foo) ei saa rikkoa listaa
+        if (!in_array($type, array('perinteiset', 'porrastetut', 'tarinalliset', 'nayttelyt', 'tulos', 'bis'), true)) {
+            $type = 'perinteiset';
+        }
 
         $vars['msg'] = '';
         $vars['text_view'] = "";
@@ -929,13 +967,20 @@ class Kilpailutoiminta extends CI_Controller
 
             $data['tulokset'] = $this->kisajarjestelma->competition_result_search_result_list(true, false, $nayttelyt, $url, false, $data['kisat']);
 
-            $data['form'] = $this->kisajarjestelma->competition_result_search_form(true, false, $url, false, null, $data['search']);
+            $data['form'] = $this->kisajarjestelma->competition_result_search_form(true, false, $url, false, $this->_result_jaos_options(), $data['search']);
 
             $this->fuel->pages->render('misc/haku', $data);
         } else if ($type == "tulos" || $type == "bis") {
             if ($type == "bis") {
                 $nayttelyt = true;
             }
+
+            // Ilman kelvollista id:tä get_result() palauttaisi mielivaltaisen rivin
+            if (!ctype_digit((string)$id)) {
+                $this->fuel->pages->render('misc/naytaviesti', array('msg_type' => 'danger', 'msg' => 'Antamallasi ID:llä ei löytynyt hyväksyttyjä tuloksia.'));
+                return;
+            }
+
             $tulos_info = array();
             if ($id_type == "kisa_id") {
                 $tulos_info = $this->Kisakeskus_model->get_result(null, $id, true, $nayttelyt);
@@ -949,15 +994,28 @@ class Kilpailutoiminta extends CI_Controller
                 $tulos_info['jaos_info'] = $this->Jaos_model->get_jaos($tulos_info['jaos']);
                 $this->load->model('Tallit_model');
                 $tulos_info['talli_info'] = $this->Tallit_model->get_stable($tulos_info['jarj_talli']);
-                $this->load->library('Kisajarjestelma');
                 $this->load->model("Tunnukset_model");
-                $tulos_info['tunnus'] =  $this->ion_auth->user($this->Tunnukset_model->get_users_id($tulos_info['tunnus']))->row();
-                $tulos_info['tulosten_lah'] = $this->ion_auth->user($this->Tunnukset_model->get_users_id($tulos_info['tulosten_lah']))->row();
-                if (isset($tulos_info['takaaja']) && $tulos_info['takaaja'] != 00000) {
-                    $tulos_info['takaaja'] =  $this->ion_auth->user($this->Tunnukset_model->get_users_id($tulos_info['takaaja']))->row();
+
+                // Kaikki tarvittavat nimimerkit yhdellä kyselyllä (ennen: 2 kyselyä per tunnus,
+                // ja ion_auth->user() toi koko käyttäjärivin näkymään).
+                $pins = array($tulos_info['tunnus'], $tulos_info['tulosten_lah']);
+                $takaaja_ok = isset($tulos_info['takaaja']) && (int)$tulos_info['takaaja'] != 0;
+                $hyvaksyi_ok = isset($tulos_info['hyvaksyi']) && (int)$tulos_info['hyvaksyi'] != 0;
+                if ($takaaja_ok) {
+                    $pins[] = $tulos_info['takaaja'];
                 }
-                if (isset($tulos_info['hyvaksyi']) && $tulos_info['hyvaksyi'] != 00000) {
-                    $tulos_info['hyvaksyi'] = $this->ion_auth->user($this->Tunnukset_model->get_users_id($tulos_info['hyvaksyi']))->row();
+                if ($hyvaksyi_ok) {
+                    $pins[] = $tulos_info['hyvaksyi'];
+                }
+                $names = $this->Tunnukset_model->get_names_by_pinnumbers($pins);
+
+                $tulos_info['tunnus'] = $this->_pin_to_display($names, $tulos_info['tunnus']);
+                $tulos_info['tulosten_lah'] = $this->_pin_to_display($names, $tulos_info['tulosten_lah']);
+                if ($takaaja_ok) {
+                    $tulos_info['takaaja'] = $this->_pin_to_display($names, $tulos_info['takaaja']);
+                }
+                if ($hyvaksyi_ok) {
+                    $tulos_info['hyvaksyi'] = $this->_pin_to_display($names, $tulos_info['hyvaksyi']);
                 }
                 $tulos_info['jarjestelma'] = &$this->kisajarjestelma;
 
@@ -1021,16 +1079,17 @@ class Kilpailutoiminta extends CI_Controller
             $vars['headers'] = json_encode($vars['headers']);
 
             if ($this->ion_auth->logged_in()) {
-                $vars['id_form'] =  $this->kisajarjestelma->competition_result_search_form(true, false, $url, false, null, $data['search']);
+                $vars['id_form'] =  $this->kisajarjestelma->competition_result_search_form(true, false, $url, false, $this->_result_jaos_options(), $data['search']);
             }
 
-            // Tulosarkisto on raskas (JOINit + tuhansia rivejä) ja sama kaikille -> välimuistiin
+            // Tulosarkisto on raskas (JOINit + tuhansia rivejä) ja sama kaikille -> välimuistiin.
+            // Avain 'v2' = kevennetty sarakejoukko, ettei vanha leveä data jää APCu:hun.
             if ($nayttelyt) {
-                $vars['data'] = $this->_cached_list('tulosarkisto_nayttelyt', 120, function () {
+                $vars['data'] = $this->_cached_list('tulosarkisto_v2_nayttelyt', 120, function () {
                     return json_encode($this->Kisakeskus_model->get_showresults());
                 });
             } else {
-                $vars['data'] = $this->_cached_list('tulosarkisto_' . (int)$porrastettu . '_' . (int)$arvontatapa, 120, function () use ($porrastettu, $arvontatapa) {
+                $vars['data'] = $this->_cached_list('tulosarkisto_v2_' . (int)$porrastettu . '_' . (int)$arvontatapa, 120, function () use ($porrastettu, $arvontatapa) {
                     return json_encode($this->Kisakeskus_model->get_results($porrastettu, $arvontatapa));
                 });
             }

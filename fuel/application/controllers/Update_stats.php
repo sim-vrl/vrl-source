@@ -8,18 +8,23 @@ class Update_stats extends CI_Controller {
         $this->load->library('ion_auth');
     }
 
-    public function update_stats() {
-$is_cli = (php_sapi_name() === 'cli' OR defined('STDIN'));
-    
-    if (!$is_cli) {
-        if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin()) {
-            show_error('Pääsy kielletty.', 403);
+    /**
+     * Ajo vain komentoriviltä, esim:  php index.php update_stats update_stats 240230188
+     * Web-pyynnöllä ei ajeta: LIKE '%..%' -haku koko tulostaulun tekstikentistä
+     * ja set_time_limit(0) voivat jumittaa php-fpm-työntekijän ja tietokannan.
+     */
+    public function update_stats($nro = null) {
+        if (php_sapi_name() !== 'cli') {
+            show_404();
+            return;
         }
-    }
-        
+        if ($nro === null || !ctype_digit((string)$nro) || strlen((string)$nro) != 9) {
+            echo "Käyttö: php index.php update_stats update_stats <9-numeroinen rekisterinumero>\n";
+            return;
+        }
+        $nro = (string)$nro; // Rekisterinumero ilman VH-etuliitettä
+
         set_time_limit(0);
-        
-        $nro = 240230188; // Rekisterinumero ilman VH-etuliitettä
 
         // Luodaan eri hakumuodot
         $vuosi = substr($nro, 0, 2);

@@ -373,6 +373,7 @@ class Kisajarjestelma
                 $new_data[$pre_txt.'os']  = $os[$horse] ?? 0;
 
                 $bulk_add[] = $new_data;
+
             } else {
                 // AIEMMAT STATSIT LÖYTYY
                 $data = $stats_info[$horse];

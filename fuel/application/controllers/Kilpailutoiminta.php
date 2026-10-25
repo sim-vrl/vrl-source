@@ -12,6 +12,27 @@ class Kilpailutoiminta extends CI_Controller
         $this->load->model('Kisakeskus_model');
     }
 
+    /**
+     * Julkisten (ei käyttäjäkohtaisten) listojen lyhyt välimuisti APCu:hun.
+     * Botit ja F5-painelu eivät silloin osu tietokantaan joka kerta.
+     * Jos APCu ei ole käytössä, kysely ajetaan normaalisti.
+     */
+    private function _cached_list($key, $ttl, $callback)
+    {
+        $key = 'vrl_kt_' . $key;
+        if (function_exists('apcu_fetch') && ini_get('apc.enabled')) {
+            $hit = false;
+            $val = apcu_fetch($key, $hit);
+            if ($hit) {
+                return $val;
+            }
+            $val = $callback();
+            apcu_store($key, $val, $ttl);
+            return $val;
+        }
+        return $callback();
+    }
+
     public function pipari()
     {
         $this->fuel->pages->render('misc/pipari');
@@ -673,7 +694,9 @@ class Kilpailutoiminta extends CI_Controller
 
         $vars['headers'] = json_encode($vars['headers']);
 
-        $vars['data'] = json_encode($this->Kisakeskus_model->get_calendar_show());
+        $vars['data'] = $this->_cached_list('nayttelykalenteri', 120, function () {
+            return json_encode($this->Kisakeskus_model->get_calendar_show());
+        });
 
         $vars['kalenteri'] = $this->load->view('misc/taulukko', $vars, TRUE);
 
@@ -724,7 +747,9 @@ class Kilpailutoiminta extends CI_Controller
         if ($this->input->get('jaos')) {
             $jaos = $this->input->get('jaos');
         }
-        $vars['data'] = json_encode($this->Kisakeskus_model->get_calendar($porrastettu, $arvontatapa, $jaos));
+        $vars['data'] = $this->_cached_list('kalenteri_' . (int)$porrastettu . '_' . (int)$arvontatapa . '_' . (int)$jaos, 120, function () use ($porrastettu, $arvontatapa, $jaos) {
+            return json_encode($this->Kisakeskus_model->get_calendar($porrastettu, $arvontatapa, $jaos));
+        });
 
         $vars['kalenteri'] = $this->load->view('misc/taulukko', $vars, TRUE);
 
@@ -999,10 +1024,15 @@ class Kilpailutoiminta extends CI_Controller
                 $vars['id_form'] =  $this->kisajarjestelma->competition_result_search_form(true, false, $url, false, null, $data['search']);
             }
 
+            // Tulosarkisto on raskas (JOINit + tuhansia rivejä) ja sama kaikille -> välimuistiin
             if ($nayttelyt) {
-                $vars['data'] = json_encode($this->Kisakeskus_model->get_showresults());
+                $vars['data'] = $this->_cached_list('tulosarkisto_nayttelyt', 120, function () {
+                    return json_encode($this->Kisakeskus_model->get_showresults());
+                });
             } else {
-                $vars['data'] = json_encode($this->Kisakeskus_model->get_results($porrastettu, $arvontatapa));
+                $vars['data'] = $this->_cached_list('tulosarkisto_' . (int)$porrastettu . '_' . (int)$arvontatapa, 120, function () use ($porrastettu, $arvontatapa) {
+                    return json_encode($this->Kisakeskus_model->get_results($porrastettu, $arvontatapa));
+                });
             }
 
             $vars['kalenteri'] = $this->load->view('misc/taulukko', $vars, TRUE);

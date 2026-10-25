@@ -322,6 +322,23 @@ public function get_resultless_leveled_competitions($max = 100){
             return array();
         }
 }
+
+/**
+ * Arpomattomien porrastettujen määrä yhdellä COUNT-kyselyllä (ei haeta rivejä muistiin
+ * pelkän sizeof():n takia). Ehdot samat kuin get_resultless_leveled_competitions().
+ */
+public function count_resultless_leveled_competitions(){
+        $this->CI->db->select('COUNT(*) as kpl', FALSE);
+        $this->CI->db->from('vrlv3_kisat_kisakalenteri as k');
+        $this->CI->db->where('k.vanha', 0);
+        $this->CI->db->where('k.porrastettu', 1);
+        $this->CI->db->where('k.tulokset', 0);
+        $this->CI->db->where('k.kp <=', date('Y-m-d'));
+        $this->CI->db->where('k.hyvaksytty is NOT NULL', NULL, FALSE);
+        $this->CI->db->where("EXISTS(SELECT * FROM vrlv3_kisat_kisaluokat as l WHERE l.kisa_id = k.kisa_id)");
+        $row = $this->CI->db->get()->row_array();
+        return (int)($row['kpl'] ?? 0);
+}
     
     
     ////////////////////////////////////////////////////////////////////777
@@ -662,12 +679,32 @@ public function handle_porrastettu_class_results($jaos, $kisa, $classinfo, $part
         $earned_points = array();
         
         $properties_amount = sizeof($properties);
+        $properties = array_values($properties);
         $percentage_min = 15;
         $percentage_max = 75;
     
         
         $percentages = array();
-        while(true){
+        if($properties_amount < 1){
+            return $earned_points;
+        }
+        if($properties_amount == 1){
+            $percentages = array(100);
+        }
+        // Rajattu määrä yrityksiä: aiemmin while(true) jäi ikuiseen silmukkaan, jos
+        // ominaisuuksia oli 0, 1 tai liian monta (>=7), koska viimeinen prosentti ei voinut mahtua rajoihin.
+        $attempts = 0;
+        while($properties_amount > 1){
+            if(++$attempts > 500){
+                // varalla tasajako
+                $percentages = array();
+                $base = intdiv(100, $properties_amount);
+                for($i = 0; $i < $properties_amount; $i++){
+                    $percentages[] = $base;
+                }
+                $percentages[$properties_amount-1] += 100 - $base * $properties_amount;
+                break;
+            }
             $percentages = array();
             $percentages_sum = 0;
             //haetaan ominaisuuksien määrä - 1 prosenttilukua
@@ -718,6 +755,7 @@ public function handle_porrastettu_class_results($jaos, $kisa, $classinfo, $part
     }
     
     public function approve_propertyPoints_from_queue($tulos_id){
+                    $tulos_id = (int)$tulos_id;
 
                     $this->CI->db->query('UPDATE vrlv3_hevosrekisteri_ominaisuudet o
                         JOIN vrlv3_hevosrekisteri_ominaisuudet_jonossa j ON o.reknro = j.reknro

@@ -180,7 +180,7 @@ class Kisakeskus_model extends CI_Model
 
         }
                    $this->db->group_start();
-            $this->db->where('t.hyvaksytty IS NULL OR t.hyvaksytty = \'0000-00-00 00:00:00\'');
+            $this->db->where('t.hyvaksytty', '0000-00-00 00:00:00');
             $this->db->group_end();
         $this->db->group_by('n.jaos');
         
@@ -951,7 +951,8 @@ class Kisakeskus_model extends CI_Model
 	    if (empty($kutsu)){
 		  $return_array['result'] = false;
 		  $return_array['message'] = "Kutsua ei ole olemassa";
-		  return $return_array();
+		  $this->db->trans_complete();
+			  return $return_array;
 	    } 
 	    
 	    $ExpDate = new DateTime($kutsu[0]['vip']);

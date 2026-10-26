@@ -95,7 +95,7 @@ class Yllapito_kalenterit extends CI_Controller
            
         }
         
-        $data['porrastetut_amount'] = sizeof($this->porrastetut->get_resultless_leveled_competitions(100));
+        $data['porrastetut_amount'] = $this->porrastetut->count_resultless_leveled_competitions();
     
     	$this->fuel->pages->render('yllapito/kisakalenteri/kisakalenterit_etusivu', $data);
 
@@ -145,7 +145,7 @@ class Yllapito_kalenterit extends CI_Controller
     public function porrastetut_run(){
         
         $done = $this->porrastetut->generate_results_automatically($max = 10);
-        $kpl = sizeof($this->porrastetut->get_resultless_leveled_competitions(100));
+        $kpl = $this->porrastetut->count_resultless_leveled_competitions();
 
         $this->fuel->pages->render('misc/naytaviesti', array('msg_type' => 'success', 'msg' => $done .' kpl porrastettuja kisoja arvottu. ' . $kpl . ' kpl jäljellä. Paina f5 jos haluat arpoa lisää.'));
 
@@ -412,7 +412,7 @@ public function etuuspisteet($jaos = null, $tunnus = null){
              $data['msg_type'] = "danger";
             }
             else if (!$this->_is_allowed_to_process_calendar($data['search']['jaos'], $msg)){
-             $data['msg'] = "Sinulla ei ole oikeutta jaoksen ".$jaos_data['lyhenne']." kilpailukalenteriin. ";
+             $data['msg'] = "Sinulla ei ole oikeutta valitun jaoksen kilpailukalenteriin. " . $msg;
              $data['msg_type'] = "danger";
             }else {
                 $nayttelyt = $this->kisajarjestelma->nayttelyjaos($data['search']['jaos']);
@@ -848,12 +848,18 @@ $this->index();
         $this->db->where('k.jaos', $jaos);
         $this->db->where('k.vanha', 0);
         $this->db->group_start();
-        $this->db->where($letter.'.hyvaksytty IS NULL OR '.$letter.'.hyvaksytty = \'0000-00-00 00:00:00\'');
+        if($result){
+            // tulostaulujen hyvaksytty on NOT NULL -> pelkkä vertailu käyttää indeksiä
+            $this->db->where($letter.'.hyvaksytty', '0000-00-00 00:00:00');
+        }else{
+            $this->db->where($letter.'.hyvaksytty IS NULL OR '.$letter.'.hyvaksytty = \'0000-00-00 00:00:00\'');
+        }
         $this->db->group_end();
         $this->db->group_start();
         $this->db->where($letter.'.kasitelty IS NULL OR '.$letter.'.kasitelty < \'' . $date->format('Y-m-d H:i:s') . '\'');
         $this->db->group_end();
         $this->db->order_by($letter.".ilmoitettu", "asc"); 
+        $this->db->limit(1); // vain yksi jonoitem käsittelyyn, ei koko jonoa muistiin
         $query = $this->db->get();
         
         if ($query->num_rows() > 0)

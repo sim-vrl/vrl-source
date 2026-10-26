@@ -384,6 +384,7 @@ class Kisajarjestelma
                 $bulk_add[] = $new_data;
             } //jos hevosella on aiempia *tulok*sia
             else {
+                 $stats_ok = false; // nollataan joka hevoselle, ettei edellisen hevosen arvo vuoda tähän
                  if(isset($voi[$horse])){
                     $new_data[$pre_txt.'voi'] = $data[$pre_txt.'voi'] + $voi[$horse];
                     $stats_ok = true;

@@ -252,6 +252,40 @@ class Tunnukset_model extends Base_module_model
         return -1;
     }
     
+    /**
+     * Hakee usean tunnuksen nimimerkit yhdellä kyselyllä (korvaa
+     * get_users_id() + ion_auth->user() -parit, jotka olivat 2 kyselyä per tunnus).
+     * Palauttaa taulukon: tunnus (int) => olio {tunnus, nimimerkki}
+     */
+    function get_names_by_pinnumbers($pinnumbers)
+    {
+        $pins = array();
+        foreach ((array)$pinnumbers as $pin) {
+            if (is_object($pin) || !is_numeric($pin)) {
+                continue;
+            }
+            $pin = (int)$pin;
+            if ($pin > 0) {
+                $pins[$pin] = $pin;
+            }
+        }
+
+        $result = array();
+        if (empty($pins)) {
+            return $result;
+        }
+
+        $this->db->select('tunnus, nimimerkki');
+        $this->db->from('vrlv3_tunnukset');
+        $this->db->where_in('tunnus', array_values($pins));
+        $query = $this->db->get();
+
+        foreach ($query->result() as $row) {
+            $result[(int)$row->tunnus] = $row;
+        }
+        return $result;
+    }
+
     function search_users($pinnumber, $nick, $email=null, $admin=false)
     {
         if($admin){
@@ -495,4 +529,3 @@ class Tunnukset_model extends Base_module_model
         $this->db->update('vrlv3_tunnukset_pikaviestit', $data);
     }
 }
-

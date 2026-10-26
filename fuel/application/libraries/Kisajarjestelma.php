@@ -198,17 +198,21 @@ class Kisajarjestelma
         return date('Y-m-d', strtotime($date.' + 1 day'));
     }
     
-    public function nayttelyjaos($jaos_id, $jaos = array()){
-        if(!isset($jaos['nayttelyt'])){
-            $jaos = $this->CI->Jaos_model->get_jaos($jaos_id);
-            if ( $jaos['nayttelyt'] == 1 ) { return true;}
-            else { return false;}
+    private $_nayttelyjaos_cache = array();
 
-        }else {        
-        
-         if ( $jaos['nayttelyjaos'] == 1 ) { return true;}
-         else { return false;}
+    public function nayttelyjaos($jaos_id, $jaos = array()){
+        // Kutsujalla on jo jaoslistan rivi (get_jaos_list) -> ei tarvita kyselyä
+        if(isset($jaos['nayttelyt'])){
+            return isset($jaos['nayttelyjaos']) && $jaos['nayttelyjaos'] == 1;
         }
+
+        // Muistetaan tulos pyynnön ajan. Aiemmin jokainen sijoittuu()-kutsu
+        // (yksi per luokka tulossivulla) teki oman SELECT * -kyselyn jaoksesta.
+        if(!isset($this->_nayttelyjaos_cache[$jaos_id])){
+            $rivi = $this->CI->Jaos_model->get_jaos($jaos_id);
+            $this->_nayttelyjaos_cache[$jaos_id] = (!empty($rivi) && $rivi['nayttelyt'] == 1);
+        }
+        return $this->_nayttelyjaos_cache[$jaos_id];
     }
     
     ////////////////////////////////////////////////////////////////////

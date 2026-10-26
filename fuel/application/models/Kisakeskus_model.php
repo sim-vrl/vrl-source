@@ -197,28 +197,30 @@ class Kisakeskus_model extends CI_Model
     }
     
     
-        public function get_showresults($jaos = null){ 
-            $this->db->select('vip, kp, j.id as jaos, j.lyhenne as jaoslyhenne, k.url, k.info, jarj_talli, ta.nimi as tallinimi, k.ilmoitettu as kisailmoitettu, t.ilmoitettu as tulosilmoitettu,
+        public function get_showresults($jaos = null, $full = false){
+            // Lista tarvitsee vain: kp, jaos, järjestäjä, kutsu ja tuloksen id.
+            // $full = true palauttaa vanhat laajat sarakkeet (info, tallinimi jne.)
+            if($full){
+                $this->db->select('vip, kp, j.id as jaos, j.lyhenne as jaoslyhenne, k.url, k.info, jarj_talli, ta.nimi as tallinimi, k.ilmoitettu as kisailmoitettu, t.ilmoitettu as tulosilmoitettu,
                               k.kisa_id, t.bis_id as tulos_id, k.hyvaksytty');
-            $this->db->from('vrlv3_kisat_nayttelykalenteri as k');     
-            $this->db->join('vrlv3_kisat_nayttelytulokset as t', 'k.kisa_id = t.nayttely_id', 'left');
-            $this->db->join('vrlv3_tallirekisteri as ta', 'ta.tnro = k.jarj_talli');
+            } else {
+                $this->db->select('k.kp, j.lyhenne as jaoslyhenne, k.url, k.jarj_talli, t.bis_id as tulos_id');
+            }
+            $this->db->from('vrlv3_kisat_nayttelykalenteri as k');
+            // WHERE-ehdot vaativat tulosrivin, joten INNER JOIN (oli LEFT JOIN, jonka optimoija muuttaa joka tapauksessa)
+            $this->db->join('vrlv3_kisat_nayttelytulokset as t', 'k.kisa_id = t.nayttely_id');
+            if($full){
+                $this->db->join('vrlv3_tallirekisteri as ta', 'ta.tnro = k.jarj_talli');
+            }
             $this->db->join('vrlv3_kisat_jaokset as j', 'j.id = k.jaos');
             $this->db->where('k.vanha', 0);
-            
-    
-    
-                $this->db->where('k.tulokset', 1);
-                $this->db->where('t.hyvaksytty IS NOT NULL', NULL, FALSE);
+            $this->db->where('k.tulokset', 1);
             $this->db->where('t.hyvaksytty != \'0000-00-00 00:00:00\'');
-                $this->db->order_by('k.kp', 'desc');
-    
-            
-            
-            $this->db->limit('1000');
-                    
+            $this->db->order_by('k.kp', 'desc');
+            $this->db->limit(1000);
+
             $query = $this->db->get();
-            
+
             if ($query->num_rows() > 0)
             {
                 return $query->result_array();
@@ -226,7 +228,7 @@ class Kisakeskus_model extends CI_Model
                 return array();
             }
         }
-        
+
         public function get_showresult_rewards($bis_id){
             $this->db->select('tt.*, IFNULL(t.nimi, IFNULL(tt.vh_nimi, "Nimi puuttuu")) as nimi, IFNULL(t.reknro, IFNULL(tt.vh, "(Ei rek)")) as vh_id');
             $this->db->from('vrlv3_kisat_bis_tulosrivit as tt');
@@ -245,40 +247,48 @@ class Kisakeskus_model extends CI_Model
         }
     
     
-     public function get_results($porrastettu = null, $arvontatapa = null, $jaos = null){ 
-        $this->db->select('kp, j.id as jaos, j.lyhenne as jaoslyhenne, k.url, tulos_id, jarj_talli, t.nimi as tallinimi, k.kisa_id, porrastettu');
+     public function get_results($porrastettu = null, $arvontatapa = null, $jaos = null, $full = false){
+        // Lista tarvitsee vain: kp, jaos, järjestäjä, kutsu ja tuloksen id.
+        // $full = true palauttaa vanhat laajat sarakkeet (tallinimi, kisa_id jne.)
+        if($full){
+            $this->db->select('kp, j.id as jaos, j.lyhenne as jaoslyhenne, k.url, tulos_id, jarj_talli, t.nimi as tallinimi, k.kisa_id, porrastettu');
+        } else {
+            $this->db->select('k.kp, j.lyhenne as jaoslyhenne, k.url, u.tulos_id, k.jarj_talli');
+        }
         $this->db->from('vrlv3_kisat_kisakalenteri as k');
-        $this->db->join('vrlv3_tallirekisteri as t', 't.tnro = k.jarj_talli');
+        if($full){
+            $this->db->join('vrlv3_tallirekisteri as t', 't.tnro = k.jarj_talli');
+        }
         $this->db->join('vrlv3_kisat_jaokset as j', 'j.id = k.jaos');
         $this->db->join('vrlv3_kisat_tulokset as u', 'k.kisa_id = u.kisa_id');
 
         if(isset($porrastettu)){
-            $this->db->where('porrastettu', $porrastettu);
+            $this->db->where('k.porrastettu', $porrastettu);
         }
         if(isset($arvontatapa)){
-            $this->db->where('arvontatapa', $arvontatapa);
+            $this->db->where('k.arvontatapa', $arvontatapa);
         }
 
         $this->db->where('k.tulokset', 1);
-        $this->db->where('u.hyvaksytty is NOT NULL', NULL, FALSE);
+        // u.hyvaksytty on NOT NULL -> pelkkä nollapäivän pois sulkeminen riittää
         $this->db->where('u.hyvaksytty !=','0000-00-00 00:00:00');
 
-        $this->db->order_by('kp', 'desc');
-        $this->db->limit('1000');
-                
+        $this->db->order_by('k.kp', 'desc');
+        $this->db->limit(1000);
+
         $query = $this->db->get();
-        
+
         if ($query->num_rows() > 0)
         {
             return $query->result_array();
         }else {
             return array();
         }
-        
+
     }
-    
-    
-    
+
+
+
     public function get_stables_competitions($stable, $show = false){
         if($show) {
             $this->db->select('kp, j.id as jaos, j.lyhenne as jaoslyhenne, IFNULL(bis_id, "") as bis_id, jarj_talli, kisa_id, info');
@@ -500,6 +510,7 @@ class Kisakeskus_model extends CI_Model
             }
         
             
+            $where = array();
             if(isset($parameters['porrastettu_valinta']) && $parameters['porrastettu_valinta'] == 2){
                 $where['porrastettu'] = 1;
                 $where['k.hyvaksytty <'] = $this->CI->kisajarjestelma->new_leveled_start_time ();
@@ -521,15 +532,19 @@ class Kisakeskus_model extends CI_Model
                 $where['u.hyvaksyi'] = $this->CI->vrl_helper->vrl_to_number($where['k.hyvaksyi']);
                 unset($where['k.hyvaksyi']);
             }
-            if(isset($where['k.kp'])){
-                $where['k.kp'] = date('Y-m-d',strtotime($where['k.kp']));
-            }
-            if(isset($where['k.vip'])){
-                $where['k.vip'] = date('Y-m-d',strtotime($where['k.vip']));
-            }
-            if(isset($where['k.hyvaksytty'])){
-                $where['u.hyvaksytty'] = date('Y-m-d',strtotime($where['k.hyvaksytty']));
-                unset($where['k.hyvaksytty']);
+            // Päivämääräkentät ovat DATETIME-sarakkeita: '=' 'Y-m-d' osuisi vain kellonaikaan 00:00:00.
+            // Haetaan koko päivän väli, jolloin indeksiä voi käyttää.
+            foreach (array('k.kp' => 'k.kp', 'k.vip' => 'k.vip', 'k.hyvaksytty' => 'u.hyvaksytty') as $lahde => $sarake) {
+                if(isset($where[$lahde])){
+                    $ts = strtotime($where[$lahde]);
+                    unset($where[$lahde]);
+                    if($ts === false){
+                        $this->db->where('1 = 0', NULL, FALSE);
+                    } else {
+                        $where[$sarake . ' >='] = date('Y-m-d', $ts);
+                        $where[$sarake . ' <'] = date('Y-m-d', strtotime('+1 day', $ts));
+                    }
+                }
             }
                 $this->db->where($where);        }  
 
@@ -537,7 +552,7 @@ class Kisakeskus_model extends CI_Model
         $this->db->where('u.hyvaksytty is NOT NULL', NULL, FALSE);
         $this->db->where('u.hyvaksytty !=','0000-00-00 00:00:00');
 
-        $this->db->order_by('u.hyvaksytty', 'desc');
+        $this->db->order_by('k.kp', 'desc'); // sama järjestys kuin listoilla ja sivun ohjetekstissä (kisapäivä)
         $this->db->limit('1000');
                 
         $query = $this->db->get();

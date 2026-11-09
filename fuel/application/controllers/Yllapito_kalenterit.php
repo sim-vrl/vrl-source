@@ -151,74 +151,406 @@ class Yllapito_kalenterit extends CI_Controller
 
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // TYH-AJO (KERTALUONTOINEN, POISTUU AJON JÄLKEEN)
+    //
+    // Toimintaperiaate:
+    //  1. ANALYYSI  - käydään kaikki hyväksytyt TYH-tulokset läpi erissä ja
+    //                 kerätään laskennan tulos työtaulun. Ei koske oikeisiin
+    //                 statistiikkoihin. Voi ajaa kuinka monta kertaa tahansa.
+    //  2. ESIKATSELU- näytetään mitä muuttuisi (uudet / muuttuvat / ennallaan).
+    //  3. PÄIVITYS  - tekee varmuuskopion TYH-riveistä, kirjoittaa ABSOLUUTTISET
+    //                 arvot (ei lisää päälle -> ei tuplaannu vaikka ajaisi uudestaan).
+    //  4. PALAUTUS  - palauttaa varmuuskopion ja ajaa uudelleen kopion jälkeen
+    //                 hyväksytyt tulokset, ettei uusia hyväksyntöjä katoa.
+    //
+    // Vain ylläpitäjille (admin).
+    ///////////////////////////////////////////////////////////////////////////
+
+    const TYH_JAOS       = 8;
+    const TYH_BATCH_SIZE = 100;
+    const TYH_T_STATS    = 'vrlv3_hevosrekisteri_kisatiedot';
+    const TYH_T_HORSES   = 'vrlv3_hevosrekisteri';
+    const TYH_T_WORK     = 'vrlv3_tyh_ajo_work';
+    const TYH_T_STATE    = 'vrlv3_tyh_ajo_state';
+    const TYH_T_BACKUP   = 'vrlv3_tyh_ajo_backup';
+
+    // ---- Sivu ---------------------------------------------------------------
+
     public function recalculate_tyh_stats() {
-    $vars = array();
-    $jaos = 8; // TYH
+        if (!$this->ion_auth->is_admin()) {
+            redirect($this->user_rights->redirect());
+        }
 
-    // 1. Fetch current database stats baseline for TYH
-    $this->db->where('jaos', $jaos);
-    $vars['before_count'] = $this->db->count_all_results('vrlv3_hevosrekisteri_kisatiedot');
+        $vars = array();
+        $s = self::TYH_T_STATS;
 
-    if ($this->input->post('run_tyh')) {
-        set_time_limit(300);
-        ini_set('memory_limit', '256M');
+        try {
+            $this->_tyh_ensure_tables();
+            $st = $this->_tyh_state_get();
 
-        // 2. Fetch all approved results for TYH
-        $this->db->select('t.luokat, t.tulokset, t.hylatyt, t.kisa_id, k.jaos, k.porrastettu');
-        $this->db->from('vrlv3_kisat_tulokset as t');
-        $this->db->join('vrlv3_kisat_kisakalenteri as k', 'k.kisa_id = t.kisa_id');
-        $this->db->where('k.jaos', $jaos);
-        $this->db->where('t.hyvaksytty IS NOT NULL');
+            $vars['st'] = $st;
+            $vars['before_count'] = (int)$this->_tyh_q("SELECT COUNT(*) AS n FROM `$s` WHERE jaos = ?", array(self::TYH_JAOS))->row()->n;
+            $vars['backup_exists'] = $this->_tyh_backup_exists();
+            $vars['preview'] = (($st['a_status'] ?? '') === 'analysed') ? $this->_tyh_preview() : null;
 
-        $query = $this->db->get();
-        $results = $query->result_array();
+            $vars['recent_stats_sample'] = $this->_tyh_q(
+                "SELECT * FROM `$s` WHERE jaos = ? ORDER BY reknro ASC LIMIT 10", array(self::TYH_JAOS)
+            )->result_array();
+        } catch (Exception $e) {
+            $vars['st'] = array();
+            $vars['before_count'] = 0;
+            $vars['backup_exists'] = false;
+            $vars['preview'] = null;
+            $vars['recent_stats_sample'] = array();
+            $vars['msg'] = $e->getMessage();
+            $vars['msg_type'] = 'error';
+        }
 
-        if (empty($results)) {
-            $vars['msg'] = "Ei hyväksyttyjä tuloksia jaokselle {$jaos}.";
-            $vars['msg_type'] = "warning";
-        } else {
-            $processed = 0;
-            $samples = array();
+        $vars['ajax_base']  = site_url('yllapito/tyh-ajo') . '/';
+        $vars['csrf_name']  = $this->security->get_csrf_token_name();
+        $vars['csrf_hash']  = $this->security->get_csrf_hash();
+        $vars['jaos']       = self::TYH_JAOS;
 
-            foreach ($results as $tulos) {
-                $porr = $tulos['porrastettu'] ?? 0;
-                $this->kisajarjestelma->add_stats($tulos, $jaos, $porr);
-                $processed++;
+        $this->fuel->pages->render('yllapito/tyh-ajo', $vars);
+    }
 
-                // Capture details of the first 5 processed competitions as visual sample
-                if (count($samples) < 5) {
-                    $samples[] = array(
-                        'kisa_id' => $tulos['kisa_id'],
-                        'porrastettu' => $porr,
-                        'status' => 'Processed'
-                    );
-                }
+    // ---- AJAX-toiminnot -----------------------------------------------------
+
+    public function tyh_ajo_action($action = '') {
+        if (!$this->ion_auth->is_admin()) {
+            $this->_tyh_json(array('ok' => false, 'msg' => 'Vain ylläpitäjä voi ajaa tämän työkalun.'), 403);
+        }
+        if (strtoupper($this->input->server('REQUEST_METHOD')) !== 'POST') {
+            $this->_tyh_json(array('ok' => false, 'msg' => 'Vain POST sallittu.'), 405);
+        }
+
+        $this->db->db_debug = FALSE; // virheet poikkeuksina, ei HTML-virhesivuna
+        @set_time_limit(300);
+
+        try {
+            $this->_tyh_ensure_tables();
+            $st = $this->_tyh_state_get();
+
+            switch ($action) {
+
+                // ---------- 1. Analyysi: alustus ----------
+                case 'prepare':
+                    if (($st['a_status'] ?? '') === 'analysing' && (int)($st['a_done'] ?? 0) > 0 && !$this->input->post('force')) {
+                        throw new RuntimeException('Analyysi on jo kesken. Jatka sitä tai tyhjennä analyysi ensin.');
+                    }
+                    $cutoff = date('Y-m-d H:i:s'); // PHP:n kello, koska hyväksyntä kirjoittaa hyvaksytty-ajan PHP:llä
+                    $w = self::TYH_T_WORK;
+                    $this->_tyh_q("DELETE FROM `$w`");
+                    $total = (int)$this->_tyh_q(
+                        "SELECT COUNT(*) AS n" . $this->_tyh_results_from_where() . " AND t.hyvaksytty <= ?",
+                        array(self::TYH_JAOS, $cutoff)
+                    )->row()->n;
+
+                    $this->_tyh_state_set('a_status', 'analysing');
+                    $this->_tyh_state_set('a_cutoff', $cutoff);
+                    $this->_tyh_state_set('a_last', 0);
+                    $this->_tyh_state_set('a_done', 0);
+                    $this->_tyh_state_set('a_total', $total);
+                    $this->_tyh_json(array('ok' => true, 'total' => $total, 'done' => 0, 'last' => 0, 'finished' => ($total == 0)));
+                    break;
+
+                // ---------- 1b. Analyysi: yksi erä ----------
+                case 'batch':
+                    if (($st['a_status'] ?? '') !== 'analysing') {
+                        throw new RuntimeException('Analyysi ei ole käynnissä.');
+                    }
+                    $after = (int)$this->input->post('after');
+                    $last  = (int)($st['a_last'] ?? 0);
+                    if ($after !== $last) {
+                        throw new RuntimeException('Erän kursori ei täsmää (tuplaklikkaus tai toinen välilehti?). Lataa sivu uudelleen.');
+                    }
+
+                    $rows = $this->_tyh_q(
+                        "SELECT t.tulos_id, t.kisa_id, t.luokat, t.tulokset, t.hylatyt, k.porrastettu"
+                        . $this->_tyh_results_from_where()
+                        . " AND t.hyvaksytty <= ? AND t.tulos_id > ? ORDER BY t.tulos_id ASC LIMIT " . (int)self::TYH_BATCH_SIZE,
+                        array(self::TYH_JAOS, $st['a_cutoff'], $last)
+                    )->result_array();
+
+                    $total = (int)$st['a_total'];
+                    $done  = (int)$st['a_done'];
+
+                    if (empty($rows)) {
+                        $this->_tyh_state_set('a_status', 'analysed');
+                        $this->_tyh_json(array('ok' => true, 'finished' => true, 'total' => $total, 'done' => $done, 'last' => $last));
+                    }
+
+                    $ins = array();
+                    foreach ($rows as $row) {
+                        $porr  = !empty($row['porrastettu']);
+                        $stats = $this->kisajarjestelma->calculate_result_stats($row, self::TYH_JAOS);
+                        foreach ($stats as $vh => $c) {
+                            $ins[] = array(
+                                'reknro'   => $vh,
+                                'voi'      => $porr ? 0 : $c['voi'],
+                                'sij'      => $porr ? 0 : $c['sij'],
+                                'os'       => $porr ? 0 : $c['os'],
+                                'porr_voi' => $porr ? $c['voi'] : 0,
+                                'porr_sij' => $porr ? $c['sij'] : 0,
+                                'porr_os'  => $porr ? $c['os'] : 0,
+                            );
+                        }
+                        $last = (int)$row['tulos_id'];
+                    }
+                    $done += count($rows);
+
+                    // Erä + kursori samassa transaktiossa: jos jokin kaatuu, erän voi ajaa uudelleen ilman tuplauksia
+                    $this->db->trans_begin();
+                    try {
+                        if (!empty($ins)) {
+                            if ($this->db->insert_batch(self::TYH_T_WORK, $ins, NULL, 500) === FALSE) {
+                                $err = $this->db->error();
+                                throw new RuntimeException('Työtaulun kirjoitus epäonnistui: ' . ($err['message'] ?? ''));
+                            }
+                        }
+                        $this->_tyh_state_set('a_last', $last);
+                        $this->_tyh_state_set('a_done', $done);
+                        $this->db->trans_commit();
+                    } catch (Exception $e) {
+                        $this->db->trans_rollback();
+                        throw $e;
+                    }
+
+                    $this->_tyh_json(array('ok' => true, 'finished' => false, 'total' => $total, 'done' => $done, 'last' => $last));
+                    break;
+
+                // ---------- 3. Päivitys ----------
+                case 'apply':
+                    if (($st['a_status'] ?? '') !== 'analysed') {
+                        throw new RuntimeException('Aja analyysi loppuun ennen päivitystä.');
+                    }
+                    if ($this->_tyh_backup_exists()) {
+                        throw new RuntimeException('Varmuuskopio on jo olemassa. Palauta se tai hylkää se ennen uutta päivitystä.');
+                    }
+                    $s = self::TYH_T_STATS; $b = self::TYH_T_BACKUP; $h = self::TYH_T_HORSES;
+                    $agg    = $this->_tyh_agg_sql();
+                    $cutoff = $st['a_cutoff'];
+                    $t1     = date('Y-m-d H:i:s');
+
+                    // 3a. Varmuuskopio (DDL ei ole transaktiossa)
+                    $this->_tyh_q("CREATE TABLE `$b` LIKE `$s`");
+                    $this->_tyh_q("INSERT INTO `$b` SELECT * FROM `$s` WHERE jaos = ?", array(self::TYH_JAOS));
+                    $expected = (int)$this->_tyh_q("SELECT COUNT(*) AS n FROM `$s` WHERE jaos = ?", array(self::TYH_JAOS))->row()->n;
+                    $got      = (int)$this->_tyh_q("SELECT COUNT(*) AS n FROM `$b`")->row()->n;
+                    if ($expected !== $got) {
+                        $this->_tyh_q("DROP TABLE `$b`");
+                        throw new RuntimeException("Varmuuskopion rivimäärä ei täsmää ($got / $expected). Mitään ei muutettu.");
+                    }
+                    $this->_tyh_state_set('snapshot_at', $t1);
+                    $this->_tyh_state_set('backup_rows', $got);
+
+                    // 3b. Absoluuttiset arvot
+                    $this->db->trans_begin();
+                    try {
+                        $this->_tyh_q(
+                            "UPDATE `$s` k JOIN $agg a ON a.reknro = k.reknro
+                             SET k.voi = a.voi, k.sij = a.sij, k.os = a.os,
+                                 k.porr_voi = a.porr_voi, k.porr_sij = a.porr_sij, k.porr_os = a.porr_os
+                             WHERE k.jaos = ?", array(self::TYH_JAOS)
+                        );
+                        $updated = $this->db->affected_rows();
+
+                        $this->_tyh_q(
+                            "INSERT INTO `$s` (reknro, jaos, voi, sij, os, porr_voi, porr_sij, porr_os)
+                             SELECT a.reknro, ?, a.voi, a.sij, a.os, a.porr_voi, a.porr_sij, a.porr_os
+                             FROM $agg a
+                             JOIN `$h` h ON h.reknro = a.reknro
+                             LEFT JOIN `$s` k ON k.reknro = a.reknro AND k.jaos = ?
+                             WHERE k.reknro IS NULL", array(self::TYH_JAOS, self::TYH_JAOS)
+                        );
+                        $inserted = $this->db->affected_rows();
+                        $this->db->trans_commit();
+                    } catch (Exception $e) {
+                        $this->db->trans_rollback();
+                        throw new RuntimeException($e->getMessage() . ' -- Muutokset peruttiin. Varmuuskopio on olemassa; hylkää se ennen uutta yritystä.');
+                    }
+
+                    // 3c. Analyysin alun ja päivityksen välissä hyväksytyt tulokset (ne on voitu laskea vanhoihin riveihin ja ylikirjoittaa)
+                    $replayed = $this->_tyh_replay($cutoff, $t1);
+
+                    $msg = "Päivitys valmis: $updated riviä päivitetty, $inserted uutta riviä lisätty, $replayed välissä hyväksyttyä tulosta ajettu uudelleen. Varmuuskopio: $got riviä.";
+                    $this->_tyh_state_set('applied_at', date('Y-m-d H:i:s'));
+                    $this->_tyh_state_set('last_msg', $msg);
+                    $this->_tyh_state_set('a_status', 'applied');
+                    log_message('error', '[TYH-ajo] ' . $msg . ' (käyttäjä ' . $this->ion_auth->user()->row()->tunnus . ')');
+                    $this->_tyh_json(array('ok' => true, 'msg' => $msg));
+                    break;
+
+                // ---------- 4. Palautus ----------
+                case 'revert':
+                    if (!$this->_tyh_backup_exists() || empty($st['snapshot_at'])) {
+                        throw new RuntimeException('Varmuuskopiota ei löydy.');
+                    }
+                    $s = self::TYH_T_STATS; $b = self::TYH_T_BACKUP;
+                    $snapshot = $st['snapshot_at'];
+
+                    $this->db->trans_begin();
+                    try {
+                        $this->_tyh_q("DELETE FROM `$s` WHERE jaos = ?", array(self::TYH_JAOS));
+                        $this->_tyh_q("INSERT INTO `$s` SELECT * FROM `$b`");
+                        $this->db->trans_commit();
+                    } catch (Exception $e) {
+                        $this->db->trans_rollback();
+                        throw new RuntimeException($e->getMessage() . ' -- Palautus peruttiin, tila ennallaan.');
+                    }
+
+                    // Päivityksen jälkeen hyväksytyt tulokset olivat mukana vain uusissa luvuissa -> lisätään uudelleen
+                    $replayed = $this->_tyh_replay($snapshot, null);
+
+                    $msg = "Palautus valmis. Varmuuskopion " . (int)($st['backup_rows'] ?? 0) . " riviä palautettu, $replayed päivityksen jälkeen hyväksyttyä tulosta ajettu uudelleen.";
+                    $this->_tyh_state_set('last_msg', $msg);
+                    $this->_tyh_state_set('a_status', '');
+                    log_message('error', '[TYH-ajo] ' . $msg . ' (käyttäjä ' . $this->ion_auth->user()->row()->tunnus . ')');
+                    $this->_tyh_json(array('ok' => true, 'msg' => $msg));
+                    break;
+
+                // ---------- Siivous ----------
+                case 'discard_backup':
+                    $this->_tyh_q("DROP TABLE IF EXISTS `" . self::TYH_T_BACKUP . "`");
+                    $this->_tyh_state_set('snapshot_at', '');
+                    $this->_tyh_state_set('backup_rows', '');
+                    $this->_tyh_state_set('last_msg', 'Varmuuskopio hylätty.');
+                    $this->_tyh_json(array('ok' => true, 'msg' => 'Varmuuskopio hylätty.'));
+                    break;
+
+                case 'reset':
+                    $this->_tyh_q("DELETE FROM `" . self::TYH_T_WORK . "`");
+                    foreach (array('a_status', 'a_cutoff', 'a_last', 'a_done', 'a_total') as $k) {
+                        $this->_tyh_state_set($k, '');
+                    }
+                    $this->_tyh_json(array('ok' => true, 'msg' => 'Analyysi tyhjennetty.'));
+                    break;
+
+                default:
+                    throw new RuntimeException('Tuntematon toiminto.');
             }
-
-            // 3. Count rows after execution
-            $this->db->where('jaos', $jaos);
-            $vars['after_count'] = $this->db->count_all_results('vrlv3_hevosrekisteri_kisatiedot');
-            
-            $vars['processed_count'] = $processed;
-            $vars['processed_samples'] = $samples;
-            $vars['msg'] = "Ajo suoritettu onnistuneesti!";
-            $vars['msg_type'] = "success";
+        } catch (Exception $e) {
+            log_message('error', '[TYH-ajo] ' . $action . ': ' . $e->getMessage());
+            $this->_tyh_json(array('ok' => false, 'msg' => $e->getMessage()), 200);
         }
     }
 
+    // ---- Apufunktiot --------------------------------------------------------
 
-    // 4. Fetch the 10 latest TYH stat rows to display as an inspection sample
-    $this->db->where('jaos', $jaos);
-    $this->db->order_by('reknro', 'ASC');
-    $this->db->limit(10);
-    $vars['recent_stats_sample'] = $this->db->get('vrlv3_hevosrekisteri_kisatiedot')->result_array();
+    private function _tyh_json($data, $status = 200) {
+        $data['csrf_name'] = $this->security->get_csrf_token_name();
+        $data['csrf_hash'] = $this->security->get_csrf_hash();
+        $this->output
+            ->set_status_header($status)
+            ->set_content_type('application/json')
+            ->set_output(json_encode($data));
+        $this->output->_display();
+        exit;
+    }
 
-    $this->fuel->pages->render('yllapito/tyh-ajo', $vars);
-}
+    private function _tyh_q($sql, $bind = array()) {
+        $res = $this->db->query($sql, $bind);
+        if ($res === FALSE) {
+            $err = $this->db->error();
+            throw new RuntimeException('SQL-virhe: ' . ($err['message'] ?? 'tuntematon'));
+        }
+        return $res;
+    }
+
+    private function _tyh_ensure_tables() {
+        $w = self::TYH_T_WORK; $t = self::TYH_T_STATE;
+        $this->_tyh_q("CREATE TABLE IF NOT EXISTS `$w` (
+            `reknro` BIGINT NOT NULL,
+            `voi` INT NOT NULL DEFAULT 0, `sij` INT NOT NULL DEFAULT 0, `os` INT NOT NULL DEFAULT 0,
+            `porr_voi` INT NOT NULL DEFAULT 0, `porr_sij` INT NOT NULL DEFAULT 0, `porr_os` INT NOT NULL DEFAULT 0,
+            KEY `reknro` (`reknro`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+        $this->_tyh_q("CREATE TABLE IF NOT EXISTS `$t` (
+            `k` VARCHAR(40) NOT NULL, `v` VARCHAR(255) NOT NULL DEFAULT '', PRIMARY KEY (`k`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+    }
+
+    private function _tyh_state_get() {
+        $out = array();
+        foreach ($this->_tyh_q("SELECT k, v FROM `" . self::TYH_T_STATE . "`")->result_array() as $r) {
+            $out[$r['k']] = $r['v'];
+        }
+        return $out;
+    }
+
+    private function _tyh_state_set($k, $v) {
+        $this->_tyh_q("REPLACE INTO `" . self::TYH_T_STATE . "` (k, v) VALUES (?, ?)", array($k, (string)$v));
+    }
+
+    private function _tyh_backup_exists() {
+        return $this->_tyh_q("SHOW TABLES LIKE '" . self::TYH_T_BACKUP . "'")->num_rows() > 0;
+    }
+
+    // Hyväksytyt TYH-tulokset (sama ehto kuin tulosten poistossa: ei NULL eikä nollapäivä)
+    private function _tyh_results_from_where() {
+        return " FROM vrlv3_kisat_tulokset t
+                 JOIN vrlv3_kisat_kisakalenteri k ON k.kisa_id = t.kisa_id
+                 WHERE k.jaos = ? AND t.hyvaksytty IS NOT NULL AND t.hyvaksytty != '0000-00-00 00:00:00'";
+    }
+
+    // Työtaulun rivit summattuna hevosittain
+    private function _tyh_agg_sql() {
+        $w = self::TYH_T_WORK;
+        return "(SELECT reknro, SUM(voi) AS voi, SUM(sij) AS sij, SUM(os) AS os,
+                        SUM(porr_voi) AS porr_voi, SUM(porr_sij) AS porr_sij, SUM(porr_os) AS porr_os
+                 FROM `$w` GROUP BY reknro)";
+    }
+
+    // Ajaa add_stats() tuloksille jotka on hyväksytty välillä ($from, $to]. $to = null -> ei ylärajaa.
+    private function _tyh_replay($from, $to = null) {
+        $sql  = "SELECT t.tulos_id, t.kisa_id, t.luokat, t.tulokset, t.hylatyt, k.porrastettu"
+              . $this->_tyh_results_from_where() . " AND t.hyvaksytty > ?";
+        $bind = array(self::TYH_JAOS, $from);
+        if ($to !== null) {
+            $sql .= " AND t.hyvaksytty <= ?";
+            $bind[] = $to;
+        }
+        $rows = $this->_tyh_q($sql . " ORDER BY t.tulos_id ASC", $bind)->result_array();
+        foreach ($rows as $row) {
+            $this->kisajarjestelma->add_stats($row, self::TYH_JAOS, $row['porrastettu'] ?? 0);
+        }
+        return count($rows);
+    }
+
+    // Esikatselu: mitä päivitys tekisi nykytilaan nähden
+    private function _tyh_preview() {
+        $s = self::TYH_T_STATS; $h = self::TYH_T_HORSES;
+        $agg = $this->_tyh_agg_sql();
+        $j   = self::TYH_JAOS;
+        $same = "k.voi <=> a.voi AND k.sij <=> a.sij AND k.os <=> a.os
+                 AND k.porr_voi <=> a.porr_voi AND k.porr_sij <=> a.porr_sij AND k.porr_os <=> a.porr_os";
+        $n = function ($sql, $bind = array()) { return (int)$this->_tyh_q($sql, $bind)->row()->n; };
+
+        $p = array();
+        $p['horses']    = $n("SELECT COUNT(*) AS n FROM $agg a");
+        $p['unknown']   = $n("SELECT COUNT(*) AS n FROM $agg a LEFT JOIN `$h` h ON h.reknro = a.reknro WHERE h.reknro IS NULL");
+        $p['new']       = $n("SELECT COUNT(*) AS n FROM $agg a JOIN `$h` h ON h.reknro = a.reknro
+                              LEFT JOIN `$s` k ON k.reknro = a.reknro AND k.jaos = ? WHERE k.reknro IS NULL", array($j));
+        $p['matched']   = $n("SELECT COUNT(*) AS n FROM $agg a JOIN `$s` k ON k.reknro = a.reknro AND k.jaos = ?", array($j));
+        $p['changed']   = $n("SELECT COUNT(*) AS n FROM $agg a JOIN `$s` k ON k.reknro = a.reknro AND k.jaos = ?
+                              WHERE NOT ($same)", array($j));
+        $p['unchanged'] = $p['matched'] - $p['changed'];
+        $p['untouched'] = $n("SELECT COUNT(*) AS n FROM `$s` k LEFT JOIN $agg a ON a.reknro = k.reknro
+                              WHERE k.jaos = ? AND a.reknro IS NULL", array($j));
+        $p['sample']    = $this->_tyh_q(
+            "SELECT a.reknro,
+                    k.os AS old_os, k.sij AS old_sij, k.voi AS old_voi,
+                    a.os AS new_os, a.sij AS new_sij, a.voi AS new_voi,
+                    k.porr_os AS old_porr_os, a.porr_os AS new_porr_os
+             FROM $agg a JOIN `$s` k ON k.reknro = a.reknro AND k.jaos = ?
+             WHERE NOT ($same)
+             ORDER BY ABS(a.os - IFNULL(k.os, 0)) DESC LIMIT 10", array($j)
+        )->result_array();
+        return $p;
+    }
 
 
-    
-    
 //////////////////////////////////////////////////////////////////////////////////////////
 // Käsittele etuuspisteet
 /////////////////////////////////////////////////////////////////////////////////////////

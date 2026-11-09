@@ -415,6 +415,73 @@ class Kisajarjestelma
 
     }
     
+    /**
+     * Laskee yhden tuloksen statistiikat KIRJOITTAMATTA tietokantaan.
+     * Parsinta ja sijoituslogiikka vastaavat add_stats()-funktiota (TYH-ajo käyttää tätä).
+     *
+     * @return array reknro => array('voi' => int, 'sij' => int, 'os' => int)
+     */
+    public function calculate_result_stats($tulos, $jaos){
+        $voi = array();
+        $sij = array();
+        $os  = array();
+        $vh_list = array();
+
+        $luokat = explode("\n", (string)($tulos['luokat'] ?? ''));
+        $luokat = preg_grep('/^\s*\z/', $luokat, PREG_GREP_INVERT);
+        $luokat = array_values(array_filter($luokat));
+        $luokkien_maara = sizeof($luokat);
+
+        $tulokset = explode("~", (string)($tulos['tulokset'] ?? ''));
+
+        for($i = 0; $i <= $luokkien_maara-1; $i++) {
+
+            $voittajat = explode("\n", $tulokset[$i] ?? '');
+            $voittajat_maara = sizeof($voittajat);
+            if ($voittajat_maara > 100) {$voittajat_maara = 100;}
+
+            // Sama kuin add_stats(): osallistujamäärä lasketaan rivien määrästä (tyhjät mukaan lukien)
+            $sijoittuu = $this->sijoittuu($voittajat_maara, $jaos);
+            $todellinen_sija = 1;
+
+            for($j = 0; $j <= $voittajat_maara-1; $j++) {
+                $rivi = trim($voittajat[$j]);
+                if (empty($rivi)) {
+                    continue;
+                }
+
+                $tunnuksia = preg_match_all('/VH[0-9]{2}-?[0-9]{3}-?[0-9]{4}/', $rivi, $osumat);
+
+                if ($tunnuksia > 0){
+                    foreach($osumat[0] as $osuma){
+                        $vh = $this->CI->vrl_helper->vh_to_number($osuma);
+                        $vh_list[] = $vh;
+
+                        if($sijoittuu >= $todellinen_sija){
+                            if($todellinen_sija == 1){
+                                $this->_sort_stats_temp_array($vh, $voi);
+                            } else {
+                                $this->_sort_stats_temp_array($vh, $sij);
+                            }
+                        }
+                        $this->_sort_stats_temp_array($vh, $os);
+                    }
+                    $todellinen_sija++;
+                }
+            }
+        }
+
+        $out = array();
+        foreach(array_unique($vh_list) as $vh){
+            $out[$vh] = array(
+                'voi' => $voi[$vh] ?? 0,
+                'sij' => $sij[$vh] ?? 0,
+                'os'  => $os[$vh] ?? 0,
+            );
+        }
+        return $out;
+    }
+
     private function _sort_stats_temp_array($vh, &$taulu){
         if(isset($taulu[$vh])){
                 $taulu[$vh] = $taulu[$vh] + 1;
